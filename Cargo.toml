@@ -1,0 +1,22 @@
+[package]
+name = "vndb"
+version = "0.1.0"
+authors = ["Douman <douman@gmx.se>"]
+description = "VNDB API"
+license = "MIT"
+
+keywords = ["vndb"]
+
+repository = "https://github.com/DoumanAsh/vndb.rs"
+documentation = "https://docs.rs/rusty-vndb"
+
+readme = "README.md"
+
+[dependencies]
+native-tls = "^0"
+
+serde = "^1"
+serde_derive = "^1"
+serde_json = "^1"
+
+error-chain = "^0"
