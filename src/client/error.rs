@@ -1,11 +1,12 @@
 //! Possible errors for VNDB Client
 
+use ::serde_json;
 use ::net;
 use ::io;
 use ::native_tls;
 use ::fmt;
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 ///API Error
 ///
 ///VNDB API [Reference](https://vndb.org/d11#7)
@@ -36,5 +37,12 @@ error_chain! {
             display("VNDB error: {}", t)
         }
     }
+}
+
+#[inline(always)]
+///Parses text into VNDB Error
+pub fn parse_vndb_error(error: &str) -> serde_json::Result<Error> {
+    let vndb_error: VndbError = serde_json::from_str(error)?;
+    Ok(Error::from_kind(ErrorKind::Vndb(vndb_error)))
 }
 

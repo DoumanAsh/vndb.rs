@@ -39,15 +39,38 @@ impl Client {
         self.stream.write_all(message::construct(login, Some(args)).as_bytes())
     }
 
-    ///Reads message from VNDB server. Blocks
-    pub fn read_msg(&mut self) -> io::Result<String> {
+    ///Reads message from VNDB server. Blocks.
+    ///
+    ///Response format: `<command> [payload]`
+    ///
+    ///This function on success returns string with payload.
+    pub fn read_msg(&mut self) -> error::Result<Option<String>> {
         let mut stream = io::BufReader::new(&mut self.stream);
         let mut buffer = Vec::with_capacity(2);
 
         stream.read_until(4, &mut buffer)?;
 
-        //TODO: parse Ok/Error
-        Ok(String::from_utf8(buffer).expect("Failed to convert response to string"))
+        let _ = buffer.pop(); //remove 0x04
+
+        //I'm pretty sure VNDB is likely to send bad string
+        let msg = String::from_utf8(buffer).expect("Failed to convert response to string!");
+        let mut split_msg = msg.splitn(2, ' ');
+
+        let command = split_msg.next().expect("There should be at least 1 word in response!");
+        let data = split_msg.next();
+
+        if command == "error" {
+            //There is no point in empty error.
+            //Hopefully VNDB developers ain't that lazy.
+            let data = data.expect("Empty error from VNDB!");
+
+            Err(error::parse_vndb_error(data).expect("Unable to parse VNDB error! Bad VNDB API developer!"))
+        }
+        else {
+            //Pretty sure only 'ok' response can be with empty payload
+            //TODO: return pair (EnumVariant, String) ?
+            Ok(data.map(|data| data.to_string()))
+        }
     }
 
     ///Sends login command
