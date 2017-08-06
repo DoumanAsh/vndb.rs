@@ -34,9 +34,14 @@ impl Client {
         })
     }
 
+    ///Sends message without arguments.
+    pub fn send_empty_cmd(&mut self, cmd: &str) -> io::Result<()> {
+        self.stream.write_all(message::command(cmd).as_bytes())
+    }
+
     ///Sends message toward VNDB server.
-    pub fn send_msg<T: serde::Serialize>(&mut self, login: &str, args: Option<T>) -> io::Result<()> {
-        self.stream.write_all(message::construct(login, Some(args)).as_bytes())
+    pub fn send_msg<T: serde::Serialize>(&mut self, cmd: &str, args: Option<T>) -> io::Result<()> {
+        self.stream.write_all(message::construct(cmd, Some(args)).as_bytes())
     }
 
     ///Reads message from VNDB server. Blocks.
@@ -52,7 +57,7 @@ impl Client {
 
         let _ = buffer.pop(); //remove 0x04
 
-        //I'm pretty sure VNDB is likely to send bad string
+        //I'm pretty sure VNDB is unlikely to send bad string
         let msg = String::from_utf8(buffer).expect("Failed to convert response to string!");
         let mut split_msg = msg.splitn(2, ' ');
 
@@ -86,6 +91,12 @@ impl Client {
 
         Ok(())
     }
+
+    ///Sends dbstats command
+    pub fn dbstats(&mut self) -> error::Result<String> {
+        self.send_empty_cmd("dbstats")?;
+        self.read_msg().map(|result| result.unwrap())
+    }
 }
 
 #[cfg(test)]
@@ -93,13 +104,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn connect() {
+    fn it_works() {
         let client = Client::new();
-
         assert!(client.is_ok());
 
         let mut client = client.unwrap();
-
         client.login(None).unwrap();
+
+        let result = client.dbstats();
+        assert!(result.is_ok());
     }
 }

@@ -6,6 +6,11 @@ use ::serde;
 //TODO: https://serde.rs/attr-skip-serializing.html
 use ::serde_json;
 
+///Constructs command without arguments
+pub fn command(command: &str) -> String {
+    format!("{}\x04", command)
+}
+
 ///Constructs string that ca be send to VNDB.
 ///
 ///Format: `<command> [arguments] 0x04`
