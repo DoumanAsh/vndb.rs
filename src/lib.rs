@@ -1,19 +1,19 @@
 //!Kawaii VNDB API
-
-#[macro_use]
-extern crate error_chain;
+extern crate bytes;
+extern crate futures;
+extern crate tokio_core;
+extern crate tokio_io;
 
 extern crate serde;
+extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 
-extern crate native_tls;
-
+use std::ops;
+use std::str;
 use std::default;
 use std::fmt;
-use std::net;
 use std::io;
 
 pub mod message;
-pub mod client;
+pub mod protocol;
