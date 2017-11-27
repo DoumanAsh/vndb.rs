@@ -1,3 +1,4 @@
+//!Requests toward VNDB.
 use ::serde_json;
 
 use ::fmt;
@@ -52,7 +53,8 @@ pub mod get {
     use ::fmt;
     ///Flags for get command.
     ///
-    ///Refer to VNDB API for details.
+    ///Determines which information to retrieve.
+    ///Refere to [API](https://vndb.org/d11#5) or [Response module](../response/index.html).
     pub struct Flags {
         inner: Vec<&'static str>
     }
@@ -106,6 +108,10 @@ pub mod get {
         }
     }
 
+    ///Type of VNDB entity.
+    ///
+    ///On request can be issued only on one type.
+    ///The type determines which [flags](Struct.Flags.html) and [filters](Struct.Filters.html) are available for use.
     pub struct Type {
         inner: &'static str
     }
@@ -150,6 +156,25 @@ pub mod get {
         }
     }
 
+    ///Filters that controls what information to retrieve.
+    ///
+    ///Example of usage:
+    ///
+    ///```
+    ///#[macro_use]
+    ///extern crate vndb;
+    ///
+    ///use vndb::protocol::message::request::get::Filters;
+    ///
+    ///fn main() {
+    ///    assert_eq!(format!("{}", Filters::new().filter(filter!(id = 1)).or(filter!(id = 2))), "(id = 1 or id = 2)");
+    ///}
+    ///```
+    ///
+    ///It produces following expression: `id = 1 or id = 2`.
+    ///
+    ///Macro `filter!()` is available to express simple filters.
+    ///But overall any displayable element is allowed.
     pub struct Filters {
         inner: Vec<String>
     }
@@ -204,11 +229,16 @@ pub mod get {
 }
 
 ///Get command.
+///
+///Used to retrieve information about various entities.
 pub struct Get {
-    ///Type of command.
+    ///Type of command. [See](get/Struct.Type.html).
     pub kind: get::Type,
+    ///Flags to add. [See](get/Struct.Flags.html)
     pub flags: get::Flags,
+    ///Filers. [See](get/Struct.Filters.html)
     pub filters: get::Filters,
+    ///Options that control output. [See](get/Struct.Options.html)
     pub options: Option<get::Options>
 }
 

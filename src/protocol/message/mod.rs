@@ -1,3 +1,5 @@
+//!VNDB message.
+
 use ::serde_json;
 
 use ::fmt;
@@ -8,7 +10,7 @@ pub mod response;
 
 ///VNDB Request
 ///
-///On error returns `Response::Error`
+///On error returns [Response::Error](response/Struct.VndbError.html).
 pub enum Request {
     ///Login request.
     ///
@@ -16,14 +18,13 @@ pub enum Request {
     Login(request::Login),
     ///Get request.
     ///
-    ///On success returns `Response::Results`
+    ///On success returns [Response::Results](response/Struct.Results.html)
     Get(request::Get),
     ///VNDB statistic request.
     ///
-    ///On success returns `Response::DBstats`
+    ///On success returns [Response::DBstats](response/Struct.DBstats.html)
     DBstats
 }
-
 
 impl fmt::Display for Request {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -37,9 +38,13 @@ impl fmt::Display for Request {
 
 ///VNDB Response
 pub enum Response {
+    ///Request is ok
     Ok,
+    ///Response to Get command with data.
     Results(response::Results),
+    ///DB statistic response.
     DBstats(response::DBstats),
+    ///VNDB Error in case of invalid request.
     Error(response::VndbError)
 }
 
@@ -53,6 +58,7 @@ macro_rules! extract_field {
 }
 
 impl Response {
+    ///Creates new instance of Response by parsing raw string with it.
     pub fn from_str(msg: &str) -> io::Result<Self> {
         let mut split_msg = msg.splitn(2, ' ');
 

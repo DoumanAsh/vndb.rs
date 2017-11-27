@@ -1,4 +1,6 @@
-//! VNDB Protocol specification
+//!VNDB Protocol implementation.
+//!
+//![API Reference](https://vndb.org/d11).
 
 use ::bytes;
 

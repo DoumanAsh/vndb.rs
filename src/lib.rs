@@ -1,4 +1,6 @@
 //!Kawaii VNDB API
+//!
+
 extern crate bytes;
 extern crate futures;
 extern crate tokio_core;
@@ -15,5 +17,4 @@ use std::default;
 use std::fmt;
 use std::io;
 
-pub mod message;
 pub mod protocol;
