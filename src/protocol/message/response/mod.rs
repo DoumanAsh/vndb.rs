@@ -45,21 +45,36 @@ pub struct DBstats {
     pub traits: u64
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-///Typed version of `Results`
-pub struct TypedResults<T> {
-    ///Number of items.
-    pub num: u32,
-    ///Whether more items is available through pagination.
-    pub more: bool,
-    ///Underlying entities.
-    pub items: Vec<T>
-}
+use ::ops::Deref;
 
-///Result of `get vn` command.
-pub type ResultsVN = TypedResults<results::Vn>;
-///Result of `get release` command.
-pub type ResultsRelease = TypedResults<results::Release>;
+///Typed module for [Results](struct.Results.html)
+pub mod typed {
+    use super::{results, Deref};
+
+    #[derive(Serialize, Deserialize, Debug)]
+    ///Commont struct of `Results` response.
+    pub struct Results<T> {
+        ///Number of items.
+        pub num: u32,
+        ///Whether more items is available through pagination.
+        pub more: bool,
+        ///Underlying entities.
+        pub items: Vec<T>
+    }
+
+    impl<T> Deref for Results<T> {
+        type Target = [T];
+
+        fn deref(&self) -> &Self::Target {
+            &self.items
+        }
+    }
+
+    ///Result of `get vn` command.
+    pub type VN = Results<results::Vn>;
+    ///Result of `get release` command.
+    pub type Release = Results<results::Release>;
+}
 
 ///Loosely typed results of get command.
 ///
@@ -91,18 +106,16 @@ impl Results {
 
     #[inline]
     ///Attempts to convert data to [Vn information](results/Struct.Vn.html).
-    pub fn vn(&self) -> serde_json::Result<ResultsVN> {
+    pub fn vn(&self) -> serde_json::Result<typed::VN> {
         self.to()
     }
 
     #[inline]
     ///Attempts to convert data to [Release information](results/Struct.Release.html).
-    pub fn release(&self) -> serde_json::Result<ResultsRelease> {
+    pub fn release(&self) -> serde_json::Result<typed::Release> {
         self.to()
     }
 }
-
-use ::ops::Deref;
 
 impl Deref for Results {
     type Target = serde_json::Value;

@@ -212,6 +212,7 @@ fn decode_response_results() {
 
             assert_eq!(results.num, 1);
             assert_eq!(results.more, false);
+            assert_eq!(results.len(), 1);
             assert_eq!(results.items.len(), 1);
             let item = &results.items[0];
 
