@@ -17,7 +17,12 @@ serde = "^1"
 serde_derive = "^1"
 serde_json = "^1"
 
+lazy_static = "1"
+
+native-tls = "0"
+
 bytes = "0"
 futures = "0"
 tokio-io = "0"
 tokio-core = "0"
+tokio-tls = "0"

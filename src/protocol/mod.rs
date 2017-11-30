@@ -4,9 +4,7 @@
 
 use ::bytes;
 
-use futures::{Future};
-use tokio_io::codec::{Encoder, Decoder, Framed};
-use tokio_io::{AsyncRead, AsyncWrite};
+use tokio_io::codec::{Encoder, Decoder};
 
 use ::io;
 
