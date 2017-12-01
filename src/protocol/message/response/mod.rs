@@ -76,6 +76,7 @@ pub mod typed {
     pub type Release = Results<results::Release>;
 }
 
+#[derive(Debug)]
 ///Loosely typed results of get command.
 ///
 ///Due to lack of information on what kind of entity is presented in response,

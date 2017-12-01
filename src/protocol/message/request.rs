@@ -29,6 +29,17 @@ pub struct Login {
     pub password: Option<String>
 }
 
+impl Login {
+    ///Creates new Login message with provided login/password and other attributes as default.
+    pub fn new(login: Option<String>, password: Option<String>) -> Self {
+        Login {
+            login,
+            password,
+            ..Login::default()
+        }
+    }
+}
+
 impl fmt::Display for Login {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let payload = serde_json::to_string(&self).expect("Invalid Login message struct");

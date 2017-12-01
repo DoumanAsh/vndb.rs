@@ -2,6 +2,7 @@
 
 use ::serde_json;
 
+use ::convert;
 use ::fmt;
 use ::io;
 
@@ -26,6 +27,18 @@ pub enum Request {
     DBstats
 }
 
+impl convert::From<request::Login> for Request {
+    fn from(login: request::Login) -> Self {
+        Request::Login(login)
+    }
+}
+
+impl convert::From<request::Get> for Request {
+    fn from(get: request::Get) -> Self {
+        Request::Get(get)
+    }
+}
+
 impl fmt::Display for Request {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -36,6 +49,7 @@ impl fmt::Display for Request {
     }
 }
 
+#[derive(Debug)]
 ///VNDB Response
 pub enum Response {
     ///Request is ok
@@ -46,6 +60,24 @@ pub enum Response {
     DBstats(response::DBstats),
     ///VNDB Error in case of invalid request.
     Error(response::VndbError)
+}
+
+impl convert::From<response::Results> for Response {
+    fn from(results: response::Results) -> Self {
+        Response::Results(results)
+    }
+}
+
+impl convert::From<response::DBstats> for Response {
+    fn from(stats: response::DBstats) -> Self {
+        Response::DBstats(stats)
+    }
+}
+
+impl convert::From<response::VndbError> for Response {
+    fn from(error: response::VndbError) -> Self {
+        Response::Error(error)
+    }
 }
 
 macro_rules! extract_field {
