@@ -21,6 +21,7 @@ pub fn error<E: Into<Box<error::Error+Send+Sync>>>(error: E) -> io::Error {
     io::Error::new(io::ErrorKind::Other, error)
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! map_io {
     () => { |e| io::Error::new(io::ErrorKind::Other, e) }
