@@ -1,0 +1,21 @@
+language: rust
+
+env:
+  global:
+    - PROJECT_NAME=vndb
+
+matrix:
+  include:
+    - os: osx
+      rust: stable
+      env: TARGET=x86_64-apple-darwin
+      cache: cargo
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-gnu
+      cache: cargo
+
+sudo: false
+
+script:
+  - cargo test --target $TARGET

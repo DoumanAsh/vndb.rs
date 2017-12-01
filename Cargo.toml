@@ -2,13 +2,13 @@
 name = "vndb"
 version = "0.1.0"
 authors = ["Douman <douman@gmx.se>"]
-description = "VNDB API"
+description = "Kawaii VNDB API"
 license = "MIT"
 
 keywords = ["vndb"]
 
 repository = "https://github.com/DoumanAsh/vndb.rs"
-documentation = "https://docs.rs/rusty-vndb"
+documentation = "https://docs.rs/vndb"
 
 readme = "README.md"
 
