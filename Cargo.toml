@@ -12,6 +12,9 @@ documentation = "https://docs.rs/vndb"
 
 readme = "README.md"
 
+[badges]
+travis-ci = { repository = "DoumanAsh/vndb.rs" }
+
 [dependencies]
 serde = "^1"
 serde_derive = "^1"
