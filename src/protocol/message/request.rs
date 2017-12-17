@@ -62,6 +62,8 @@ impl Default for Login {
 ///Get's command payload.
 pub mod get {
     use ::fmt;
+
+    #[derive(Clone)]
     ///Flags for get command.
     ///
     ///Determines which information to retrieve.
@@ -119,6 +121,7 @@ pub mod get {
         }
     }
 
+    #[derive(Clone)]
     ///Type of VNDB entity.
     ///
     ///On request can be issued only on one type.
@@ -167,6 +170,7 @@ pub mod get {
         }
     }
 
+    #[derive(Clone)]
     ///Filters that controls what information to retrieve.
     ///
     ///Example of usage:
@@ -221,7 +225,7 @@ pub mod get {
         }
     }
 
-    #[derive(Deserialize, Serialize, Debug)]
+    #[derive(Deserialize, Serialize, Debug, Clone)]
     ///Optional Options for get command
     pub struct Options {
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -239,6 +243,7 @@ pub mod get {
     }
 }
 
+#[derive(Clone)]
 ///Get command.
 ///
 ///Used to retrieve information about various entities.
