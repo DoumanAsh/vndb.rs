@@ -15,6 +15,10 @@ use self::tokio_tls::{TlsConnectorExt};
 use ::net::{SocketAddr, ToSocketAddrs};
 use ::io;
 use ::convert;
+use ::std::rc::Rc;
+use ::std::cell::{
+    Cell,
+};
 
 #[macro_use]
 mod utils;
@@ -38,18 +42,24 @@ impl Future for PendingConnect {
 
     fn poll(&mut self) -> futures::Poll<Self::Item, Self::Error> {
         let framed = try_ready!(self.inner.poll()).framed(protocol::Codec);
+        let (writer, reader) = framed.split();
 
         Ok(futures::Async::Ready(Client {
-            framed
+            writer: Cell::new(writer),
+            reader: Rc::new(Cell::new(reader))
         }))
     }
 }
 
 type ClientFramed = Framed<tokio_tls::TlsStream<net::TcpStream>, protocol::Codec>;
+type ClientWriter = futures::stream::SplitSink<ClientFramed>;
+type ClientReader = futures::stream::SplitStream<ClientFramed>;
 
 ///VNDB API Client
 pub struct Client {
-    framed: ClientFramed
+    writer: Cell<ClientWriter>,
+    //As reader is cloned to Response's Future it should be wraped into Rc
+    reader: Rc<Cell<ClientReader>>
 }
 
 impl Client {
@@ -68,18 +78,19 @@ impl Client {
     ///Performs sends of message toward server.
     ///
     ///If error is returned then, message should be re-sent.
-    pub fn send<M: convert::Into<<protocol::Codec as Encoder>::Item>>(&mut self, message: M) -> io::Result<&mut Self> {
-        match self.framed.start_send(message.into())? {
-            futures::AsyncSink::Ready => self.framed.poll_complete()?,
+    pub fn send<M: convert::Into<<protocol::Codec as Encoder>::Item>>(&self, message: M) -> io::Result<&Self> {
+        let writer = unsafe { &mut *(self.writer.as_ptr()) };
+        match writer.start_send(message.into())? {
+            futures::AsyncSink::Ready => writer.poll_complete()?,
             futures::AsyncSink::NotReady(_) => return Err(utils::error("Unable to send request! Sink is not ready."))
         };
         Ok(self)
     }
 
     ///Creates future that attempts to retrieve response.
-    pub fn receive(&mut self) -> FutureResponse {
+    pub fn receive(&self) -> FutureResponse {
         FutureResponse {
-            framed: &mut self.framed
+            reader: self.reader.clone()
         }
     }
 
@@ -95,15 +106,16 @@ impl Client {
 
 #[must_use = "Must be polled!"]
 ///Future that resolves into VNDB Response on success.
-pub struct FutureResponse<'a> {
-    framed: &'a mut ClientFramed
+pub struct FutureResponse {
+    reader: Rc<Cell<ClientReader>>
 }
 
-impl<'a> Future for FutureResponse<'a> {
+impl Future for FutureResponse {
     type Item = Option<<protocol::Codec as Decoder>::Item>;
     type Error = io::Error;
 
     fn poll(&mut self) -> futures::Poll<Self::Item, Self::Error> {
-        self.framed.poll()
+        let reader = unsafe { &mut *(self.reader.as_ptr()) };
+        reader.poll()
     }
 }

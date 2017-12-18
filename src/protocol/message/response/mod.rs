@@ -94,6 +94,8 @@ pub struct Results {
 
 impl Results {
     ///Creates new instance from string with JSON.
+    ///
+    ///Notes that it expects string to be without special `0x04` character.
     pub fn from_str(results: &str) -> serde_json::Result<Self> {
         Ok(Self {
             inner: serde_json::from_str(results)?
