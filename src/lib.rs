@@ -15,7 +15,6 @@ extern crate serde_json;
 extern crate serde_derive;
 
 use std::convert;
-use std::error;
 use std::net;
 use std::ops;
 use std::str;

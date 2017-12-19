@@ -1,6 +1,6 @@
-use super::native_tls;
+extern crate tokio_tls;
+extern crate native_tls;
 
-use ::error;
 use ::io;
 
 pub trait IoError<T> {
@@ -17,9 +17,9 @@ impl<T> IoError<T> for native_tls::Result<T> {
     }
 }
 
-pub fn error<E: Into<Box<error::Error+Send+Sync>>>(error: E) -> io::Error {
-    io::Error::new(io::ErrorKind::Other, error)
-}
+//pub fn error<E: Into<Box<error::Error+Send+Sync>>>(error: E) -> io::Error {
+//    io::Error::new(io::ErrorKind::Other, error)
+//}
 
 #[doc(hidden)]
 #[macro_export]
