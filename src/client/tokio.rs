@@ -122,6 +122,7 @@ impl Receiver {
         }
     }
 
+    ///Creates future that attempts to retrieve response.
     pub fn receive(&self) -> FutureResponse {
         FutureResponse {
             reader: self.clone()
