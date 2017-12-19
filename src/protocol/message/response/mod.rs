@@ -74,6 +74,16 @@ pub mod typed {
     pub type VN = Results<results::Vn>;
     ///Result of `get release` command.
     pub type Release = Results<results::Release>;
+    ///Result of `get producer` command.
+    pub type Producer = Results<results::Producer>;
+    ///Result of `get character` command.
+    pub type Character = Results<results::Character>;
+    ///Result of `get user` command.
+    pub type User = Results<results::User>;
+    ///Result of `get votelist` command.
+    pub type VoteList = Results<results::VoteList>;
+    ///Result of `get vnlist` command.
+    pub type VnList = Results<results::VnList>;
 }
 
 #[derive(Debug)]
@@ -116,6 +126,36 @@ impl Results {
     #[inline]
     ///Attempts to convert data to [Release information](results/Struct.Release.html).
     pub fn release(&self) -> serde_json::Result<typed::Release> {
+        self.to()
+    }
+
+    #[inline]
+    ///Attempts to convert data to [Producer information](results/Struct.Producer.html).
+    pub fn producer(&self) -> serde_json::Result<typed::Producer> {
+        self.to()
+    }
+
+    #[inline]
+    ///Attempts to convert data to [Character information](results/Struct.Character.html).
+    pub fn character(&self) -> serde_json::Result<typed::Character> {
+        self.to()
+    }
+
+    #[inline]
+    ///Attempts to convert data to [User information](results/Struct.User.html).
+    pub fn user(&self) -> serde_json::Result<typed::User> {
+        self.to()
+    }
+
+    #[inline]
+    ///Attempts to convert data to [VoteList information](results/Struct.VoteList.html).
+    pub fn vote_list(&self) -> serde_json::Result<typed::VoteList> {
+        self.to()
+    }
+
+    #[inline]
+    ///Attempts to convert data to [VnList information](results/Struct.VnList.html).
+    pub fn vn_list(&self) -> serde_json::Result<typed::VnList> {
         self.to()
     }
 }
