@@ -5,11 +5,12 @@ extern crate futures;
 
 use futures::Future;
 
+use vndb::client::tokio::{Sender, Receiver};
 use vndb::protocol::message;
 
-fn init_client() -> (tokio_core::reactor::Core, vndb::client::tokio::Client) {
+fn init_client() -> (tokio_core::reactor::Core, vndb::client::tokio::RcClient) {
     let mut tokio_core = tokio_core::reactor::Core::new().expect("Should create tokio core");
-    let client = vndb::client::tokio::Client::new(&tokio_core.handle()).expect("Should initialize client");
+    let client = vndb::client::tokio::RcClient::new(&tokio_core.handle()).expect("Should initialize client");
 
     let client = tokio_core.run(client).expect("Pending connect should be successful");
     (tokio_core, client)

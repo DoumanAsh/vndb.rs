@@ -21,6 +21,9 @@ use std::str;
 use std::default;
 use std::fmt;
 use std::io;
+use std::marker;
+use std::sync;
+use std::cell;
 
 pub mod protocol;
 pub mod client;
