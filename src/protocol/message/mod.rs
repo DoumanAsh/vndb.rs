@@ -91,6 +91,8 @@ macro_rules! extract_field {
 
 impl Response {
     ///Creates new instance of Response by parsing raw string with it.
+    ///
+    ///Note that special character `0x04` at the end MUST not be included.
     pub fn from_str(msg: &str) -> io::Result<Self> {
         let mut split_msg = msg.splitn(2, ' ');
 

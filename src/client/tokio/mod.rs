@@ -1,4 +1,67 @@
 //!Tokio-based Client API.
+//!
+//!# Flavours:
+//!There are two flavours:
+//!
+//!* [RcClient](type.RcClient.html) - Single threaded with zero overhead.
+//!* [ArcClient](type.ArcClient.html) - Multi-threaded that wraps underlying Sink/Stream into mutex.
+//!
+//!# Usage:
+//!```rust
+//!#[macro_use]
+//!extern crate vndb;
+//!extern crate tokio_core;
+//!extern crate futures;
+//!
+//!use futures::future::Future;
+//!
+//!//These traits are required when using Sender/Receiver directly from result of futures.
+//!use vndb::client::tokio::{Sender, Receiver};
+//!use vndb::protocol::message;
+//!
+//!fn main() {
+//!    let mut tokio_core = tokio_core::reactor::Core::new().expect("Should create tokio core");
+//!    let client = vndb::client::tokio::RcClient::new(&tokio_core.handle()).expect("Should initialize client");
+//!    let client = tokio_core.run(client).expect("Pending connect should be successful");
+//!    let get = message::request::Get {
+//!            kind: message::request::get::Type::vn(),
+//!            flags: message::request::get::Flags::new().basic().details(),
+//!            filters: message::request::get::Filters::new().filter(filter!(title ~ "Kizuna")).or(filter!(title = "Kizuna")),
+//!            options: None
+//!    };
+//!
+//!    let send = client.send(message::request::Login::new(None, None)).map_err(|_| "Successful Login send")
+//!                     .and_then(|sender| sender.send(message::Request::DBstats).map_err(|_| "Successful DBstats send"))
+//!                     .and_then(move |sender| sender.send(get).map_err(|_| "Successful Get vn send"));
+//!
+//!    tokio_core.run(send).expect("Should send multiple requests!");
+//!
+//!    let receive = client.receive()
+//!                        .and_then(|(response, receiver)| match response {
+//!                            Some(message::Response::Ok) => {
+//!                                println!("Logged into VNDB!");
+//!                                receiver.receive()
+//!                            },
+//!                            _ => panic!("oi oi... I cannot login :(")
+//!                        }).and_then(|(response, receiver)| match response {
+//!                             Some(message::Response::DBstats(response)) => {
+//!                                 println!("DBstats={:?}", response);
+//!                                 receiver.receive()
+//!                             },
+//!                             _ => panic!("oi oi... I cannot get DBstats :(")
+//!                        }).map(|(response, _)| match response {
+//!                             Some(message::Response::Results(response)) => {
+//!                                 response.vn().expect("Parse into VN Results")
+//!                             },
+//!                             _ => panic!("oi oi... I cannot get VN :(")
+//!                        });
+//!
+//!
+//!    let vn = tokio_core.run(receive).expect("Should receive multiple requests!");
+//!    println!("vns={:?}", vn);
+//!}
+//!```
+
 extern crate tokio_tls;
 extern crate native_tls;
 extern crate futures;
@@ -38,25 +101,32 @@ type Writer = futures::stream::SplitSink<VndbFramed>;
 type Reader = futures::stream::SplitStream<VndbFramed>;
 
 //Basic traits
-
 ///Trait for writer of [Client](struct.Client.html).
-pub trait Sender {
+pub trait Sender: Sized + Clone {
     ///Creates new instance.
     fn new(writer: Writer) -> Self;
     ///Starts send of VNDB request.
-    fn send<M: convert::Into<Request>>(&self, message: M) -> PendingRequest<Self> where Self: Sized;
+    fn send<M: convert::Into<Request>>(&self, message: M) -> PendingRequest<Self> {
+        PendingRequest {
+            sender: self.clone(),
+            message: Some(message.into())
+        }
+    }
 }
 
 ///Trait for reader of [Client](struct.Client.html).
-pub trait Receiver {
+pub trait Receiver: Sized + Clone {
     ///Creates new instance.
     fn new(reader: Reader) -> Self;
     ///Creates future that attempts to retrieve response.
-    fn receive(&self) -> FutureResponse<Self> where Self: Sized;
+    fn receive(&self) -> FutureResponse<Self> {
+        FutureResponse {
+            reader: self.clone()
+        }
+    }
 }
 
 //Futures
-
 #[must_use = "Must be polled!"]
 ///Pending connection to VNDB API server.
 pub struct PendingConnect<S: Sender, R: Receiver> {
@@ -89,18 +159,26 @@ pub struct FutureResponse<R: Receiver> {
     reader: R
 }
 
+impl<R: Receiver> FutureResponse<R> where Self: Future<Item=(Option<Response>, R)> {
+    #[inline]
+    fn int_poll(receiver: &R, reader: &mut Reader) -> futures::Poll<<Self as Future>::Item, io::Error> {
+        let result = reader.poll()?;
+
+        match result {
+            futures::Async::Ready(rsp) => Ok(futures::Async::Ready((rsp, receiver.clone()))),
+            futures::Async::NotReady => Ok(futures::Async::NotReady)
+        }
+    }
+}
+
 impl Future for FutureResponse<RcReceiver> {
     type Item = (Option<Response>, RcReceiver);
     type Error = io::Error;
 
     fn poll(&mut self) -> futures::Poll<Self::Item, Self::Error> {
         let reader = unsafe { &mut *(self.reader.inner.as_ptr()) };
-        let result = reader.poll()?;
 
-        match result {
-            futures::Async::Ready(rsp) => Ok(futures::Async::Ready((rsp, self.reader.clone()))),
-            futures::Async::NotReady => Ok(futures::Async::NotReady)
-        }
+        Self::int_poll(&self.reader, reader)
     }
 }
 
@@ -115,11 +193,7 @@ impl Future for FutureResponse<ArcReceiver> {
             Err(_) => return Ok(futures::Async::NotReady)
         };
 
-        let result = reader.poll()?;
-        match result {
-            futures::Async::Ready(rsp) => Ok(futures::Async::Ready((rsp, self.reader.clone()))),
-            futures::Async::NotReady => Ok(futures::Async::NotReady)
-        }
+        Self::int_poll(&self.reader, reader)
     }
 }
 
@@ -130,6 +204,24 @@ pub struct PendingRequest<S: Sender> {
     message: Option<Request>
 }
 
+impl<S: Sender> PendingRequest<S> where Self: Future<Item=S> {
+    #[inline]
+    fn int_poll(sender: &S, message: &mut Option<Request>, writer: &mut Writer) -> futures::Poll<<Self as Future>::Item, io::Error> {
+        //We take out value of message leaving None
+        //If sink is not able to send, value is returned back.
+        match writer.start_send(message.take().unwrap())? {
+            futures::AsyncSink::Ready => {
+                writer.poll_complete()?;
+                Ok(futures::Async::Ready(sender.clone()))
+            },
+            futures::AsyncSink::NotReady(returned) => {
+                *message = Some(returned);
+                Ok(futures::Async::NotReady)
+            }
+        }
+    }
+}
+
 impl Future for PendingRequest<RcSender> {
     type Item = RcSender;
     type Error = io::Error;
@@ -137,18 +229,7 @@ impl Future for PendingRequest<RcSender> {
     fn poll(&mut self) -> futures::Poll<Self::Item, Self::Error> {
         let writer = unsafe { &mut *(self.sender.inner.as_ptr()) };
 
-        //We take out value of message leaving None
-        //If sink is not able to send, value is returned back.
-        match writer.start_send(self.message.take().unwrap())? {
-            futures::AsyncSink::Ready => {
-                writer.poll_complete()?;
-                Ok(futures::Async::Ready(self.sender.clone()))
-            },
-            futures::AsyncSink::NotReady(message) => {
-                self.message = Some(message);
-                Ok(futures::Async::NotReady)
-            }
-        }
+        Self::int_poll(&self.sender, &mut self.message, writer)
     }
 }
 
@@ -163,24 +244,12 @@ impl Future for PendingRequest<ArcSender> {
             Err(_) => return Ok(futures::Async::NotReady)
         };
 
-        //We take out value of message leaving None
-        //If sink is not able to send, value is returned back.
-        match writer.start_send(self.message.take().unwrap())? {
-            futures::AsyncSink::Ready => {
-                writer.poll_complete()?;
-                Ok(futures::Async::Ready(self.sender.clone()))
-            },
-            futures::AsyncSink::NotReady(message) => {
-                self.message = Some(message);
-                Ok(futures::Async::NotReady)
-            }
-        }
+        Self::int_poll(&self.sender, &mut self.message, writer)
     }
 }
 
 
 //Senders
-
 #[derive(Clone)]
 ///[Client](struct.Client.html)'s writer.
 ///
@@ -195,14 +264,6 @@ impl Sender for RcSender {
     fn new(writer: Writer) -> Self {
         Self {
             inner: Rc::new(Cell::new(writer))
-        }
-    }
-
-    ///Starts send of VNDB request.
-    fn send<M: convert::Into<Request>>(&self, message: M) -> PendingRequest<Self> {
-        PendingRequest {
-            sender: self.clone(),
-            message: Some(message.into())
         }
     }
 }
@@ -225,14 +286,6 @@ impl Sender for ArcSender {
             inner: Arc::new(Mutex::new(writer))
         }
     }
-
-    ///Starts send of VNDB request.
-    fn send<M: convert::Into<Request>>(&self, message: M) -> PendingRequest<Self> {
-        PendingRequest {
-            sender: self.clone(),
-            message: Some(message.into())
-        }
-    }
 }
 
 
@@ -251,13 +304,6 @@ impl Receiver for RcReceiver {
     fn new(reader: Reader) -> Self {
         Self {
             inner: Rc::new(Cell::new(reader))
-        }
-    }
-
-    ///Creates future that attempts to retrieve response.
-    fn receive(&self) -> FutureResponse<Self> {
-        FutureResponse {
-            reader: self.clone()
         }
     }
 }
