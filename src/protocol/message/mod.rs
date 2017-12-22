@@ -9,6 +9,7 @@ use ::io;
 pub mod request;
 pub mod response;
 
+#[derive(Clone)]
 ///VNDB Request
 ///
 ///On error returns [Response::Error](response/Struct.VndbError.html).

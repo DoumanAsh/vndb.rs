@@ -4,7 +4,7 @@ use ::serde_json;
 use ::fmt;
 use ::default::Default;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 ///Login command arguments
 ///
 ///Defaults:
