@@ -88,7 +88,7 @@ use super::utils;
 use self::utils::IoError;
 use super::common::{
     API_DOMAIN,
-    API_URL,
+    api_url,
     Request,
     Response
 };
@@ -345,7 +345,7 @@ impl<S: Sender, R: Receiver> Client<S, R> {
     ///Creates future that resolves to Client on successful connection.
     pub fn new(handle: &reactor::Handle) -> io::Result<PendingConnect<S, R>> {
         let cx = TlsConnector::builder().map_io()?.build().map_io()?;
-        let socket = net::TcpStream::connect(&API_URL, handle).map_err(map_io!());
+        let socket = net::TcpStream::connect(&api_url()?, handle).map_err(map_io!());
 
         let inner = socket.and_then(move |socket| cx.connect_async(API_DOMAIN, socket).map_err(map_io!()));
 

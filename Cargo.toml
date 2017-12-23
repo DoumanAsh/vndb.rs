@@ -1,6 +1,6 @@
 [package]
 name = "vndb"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Douman <douman@gmx.se>"]
 description = "Kawaii VNDB API"
 license = "MIT"
@@ -19,8 +19,6 @@ travis-ci = { repository = "DoumanAsh/vndb.rs" }
 serde = "^1"
 serde_derive = "^1"
 serde_json = "^1"
-
-lazy_static = "1"
 
 native-tls = "0"
 

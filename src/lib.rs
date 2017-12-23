@@ -1,8 +1,5 @@
 //!Kawaii VNDB API
 //!
-#[macro_use]
-extern crate lazy_static;
-
 extern crate bytes;
 #[macro_use(try_ready)]
 extern crate futures;
