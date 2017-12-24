@@ -149,6 +149,13 @@ pub mod get {
         pub fn vnlist() -> Self { Self { inner: "vnlist" } }
         ///User's wishlist.
         pub fn wishlist() -> Self { Self { inner: "wishlist" } }
+
+        ///Returns short ID alias of type.
+        ///
+        ///Can be used in VNDB links as `<short><id>`
+        pub fn short<'a>(&'a self) -> &'a str {
+            &self.inner[..1]
+        }
     }
 
     impl fmt::Display for Type {

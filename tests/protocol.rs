@@ -12,6 +12,13 @@ use bytes::{BufMut};
 use tokio_io::codec::{Encoder, Decoder};
 
 #[test]
+fn get_type_short() {
+    let vn_type = message::request::get::Type::vn();
+
+    assert_eq!(vn_type.short(), "v");
+}
+
+#[test]
 fn encode_request_login_without_auth() {
     let login = message::request::Login {
         protocol: 2,
