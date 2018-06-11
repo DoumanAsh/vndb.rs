@@ -1,8 +1,8 @@
 //! VNDB entities types.
 extern crate serde;
 
-use serde::{Serialize, Deserialize};
-use serde::de::Error;
+use self::serde::{Serialize, Deserialize};
+use self::serde::de::Error;
 
 #[derive(Deserialize, Serialize, Debug)]
 ///Links for VN.
@@ -425,8 +425,11 @@ pub struct Producer {
 #[derive(Debug)]
 ///[Character](struct.Character.html)'s gender
 pub enum CharacterGender {
+    ///Male gender.
     Male,
+    ///Female gender.
     Female,
+    ///Both genders?
     Both
 }
 
@@ -587,10 +590,15 @@ pub struct VoteList {
 #[derive(Copy, Clone, Debug)]
 ///Status in [VnList](struct.VnList.html).
 pub enum VnStatus {
+    ///Unknown.
     Unknown = 0,
+    ///Currently playing.
     Playing = 1,
+    ///Finished.
     Finished = 2,
+    ///Stalled.
     Stalled = 3,
+    ///Dropped.
     Dropped = 4
 }
 

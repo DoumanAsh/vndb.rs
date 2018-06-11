@@ -1,8 +1,8 @@
 //!Requests toward VNDB.
-use ::serde_json;
+extern crate serde_json;
 
-use ::fmt;
-use ::default::Default;
+use std::fmt;
+use std::default::Default;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 ///Login command arguments
@@ -61,7 +61,7 @@ impl Default for Login {
 
 ///Get's command payload.
 pub mod get {
-    use ::fmt;
+    use std::fmt;
 
     #[derive(Clone)]
     ///Flags for get command.
@@ -73,6 +73,7 @@ pub mod get {
     }
 
     impl Flags {
+        ///Creates new instance with no flags;
         pub fn new() -> Self {
             Self {
                 inner: vec![]
@@ -202,6 +203,7 @@ pub mod get {
     }
 
     impl Filters {
+        ///Creates new instance with no filters.
         pub fn new() -> Self {
             Self {
                 inner: vec![]

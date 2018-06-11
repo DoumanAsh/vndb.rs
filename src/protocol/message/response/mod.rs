@@ -1,8 +1,11 @@
 //!VNDB Responses.
-use ::serde::{Deserialize};
-use ::serde_json;
+extern crate serde;
+extern crate serde_json;
 
-use ::fmt;
+use self::serde::{Deserialize};
+
+use std::fmt;
+use std::ops::Deref;
 
 pub mod results;
 
@@ -11,6 +14,7 @@ pub mod results;
 ///
 ///VNDB API [Reference](https://vndb.org/d11#7)
 pub struct VndbError {
+    ///Error identifier.
     pub id: String,
     ///Message
     ///
@@ -34,18 +38,25 @@ impl fmt::Display for VndbError {
 #[derive(Deserialize, Serialize, Debug)]
 ///DBstats response
 pub struct DBstats {
+    ///Number of users.
     pub users: u64,
+    ///Number of threads.
     pub threads: u64,
+    ///Number of tags.
     pub tags: u64,
+    ///Number of releases.
     pub releases: u64,
+    ///Number of producers.
     pub producers: u64,
+    ///Number of characters.
     pub chars: u64,
+    ///Number of posts.
     pub posts: u64,
+    ///Number of VNs.
     pub vn: u64,
+    ///Number of traits.
     pub traits: u64
 }
-
-use ::ops::Deref;
 
 ///Typed module for [Results](struct.Results.html)
 pub mod typed {

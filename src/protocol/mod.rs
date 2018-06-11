@@ -2,11 +2,13 @@
 //!
 //![API Reference](https://vndb.org/d11).
 
-use ::bytes;
+extern crate bytes;
 
-use tokio_io::codec::{Encoder, Decoder};
+extern crate tokio_io;
+use self::tokio_io::codec::{Encoder, Decoder};
 
-use ::io;
+use std::str;
+use std::io;
 
 pub mod message;
 
@@ -16,7 +18,7 @@ pub struct Codec;
 impl Codec {
     #[inline]
     fn to_str<'a>(msg: &'a [u8]) -> io::Result<&'a str> {
-        ::str::from_utf8(&msg).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
+        str::from_utf8(&msg).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
     }
 }
 

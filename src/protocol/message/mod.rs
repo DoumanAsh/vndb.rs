@@ -1,10 +1,10 @@
 //!VNDB message.
 
-use ::serde_json;
+extern crate serde_json;
 
-use ::convert;
-use ::fmt;
-use ::io;
+use std::convert;
+use std::fmt;
+use std::io;
 
 pub mod request;
 pub mod response;
