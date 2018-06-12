@@ -3,8 +3,8 @@ vndb.rs
 
 [![Build status](https://ci.appveyor.com/api/projects/status/t724aobabcjeq675/branch/master?svg=true)](https://ci.appveyor.com/project/DoumanAsh/vndb-rs/branch/master)
 [![Build Status](https://travis-ci.org/DoumanAsh/vndb.rs.svg?branch=master)](https://travis-ci.org/DoumanAsh/vndb.rs)
-
-[Documentation](https://docs.rs/vndb)
+[![Crates.io](https://img.shields.io/crates/v/vndb.svg)](https://crates.io/crates/vndb)
+[![Documentation](https://docs.rs/vndb/badge.svg)](https://docs.rs/crate/vndb/)
 
 Kawaii VNDB API
 
