@@ -21,7 +21,7 @@ fn send_messages() {
         })
     };
 
-    let client = vndb::client::tokio::Client::new();
+    let client = vndb::client::tokio::Client::new().expect("Create VNDB Client");
     let test = client.map_err(|error| panic!("Failed to connect to VNDB: {}", error))
                      .map(move |client| {
                          println!("Start sending requests");

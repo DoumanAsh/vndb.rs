@@ -9,6 +9,7 @@ extern crate futures;
 use ::protocol;
 use super::{API_HOST, API_SSL_PORT};
 
+use std::time;
 use std::convert;
 use std::net;
 use std::io;
@@ -20,24 +21,13 @@ use self::native_tls::{TlsConnector};
 use self::tokio_io::AsyncRead;
 use self::tokio_io::codec::Framed;
 
-mod trust_dns {
-    extern crate trust_dns_resolver;
-
-    pub use self::trust_dns_resolver::ResolverFuture;
-    pub use self::trust_dns_resolver::error::ResolveError;
-    pub use self::trust_dns_resolver::config::{
-        ResolverConfig,
-        ResolverOpts
-    };
-    pub use self::trust_dns_resolver::lookup_ip::{
-        LookupIpFuture
-    };
-}
-
 type VndbFramed = Framed<tokio_tls::TlsStream<tokio::net::TcpStream>, protocol::Codec>;
 
 type VndbSink = futures::stream::SplitSink<VndbFramed>;
-type VndbStream = futures::stream::SplitStream<VndbFramed>;
+///VNDB's Stream alias.
+///
+///It is a stream with [Response](../../protocol/message/enum.Response.html)
+pub type VndbStream = futures::stream::SplitStream<VndbFramed>;
 
 #[derive(Clone)]
 ///Send component of VNDB Client.
@@ -49,9 +39,8 @@ impl ClientSender {
     ///It can fail only when connection gets closed.
     ///Which means VNDB Client is no longer valid.
     pub fn request<M: convert::Into<protocol::message::Request>>(&self, message: M) -> Result<(), io::Error> {
-        self.0
-            .unbounded_send(message.into())
-            .map_err(Self::broken_pipe)
+        self.0.unbounded_send(message.into())
+              .map_err(Self::broken_pipe)
     }
 
     #[inline]
@@ -103,10 +92,7 @@ impl Client {
     #[inline]
     ///Constructs client from its components
     pub fn from_parts(sender: ClientSender, stream: VndbStream) -> Self {
-        Self {
-            sender,
-            stream
-        }
+        Self { sender, stream }
     }
 
     #[inline]
@@ -124,15 +110,15 @@ impl Client {
         self.sender.clone()
     }
 
-    ///Creates future that attempts to connect to VNDB.
+    #[inline]
+    ///Creates future with default settings that attempts to connect to VNDB.
     ///
     ///Once resolved it spawns tokio's job that handles sends of all messages.
     ///As soon as tokio's runtime will be stopped, the client will be invalidated.
     ///
-    ///In impossible case of underlying mpsc to throw error, the job shall panic.
-    pub fn new() -> PendingConnect {
-        let resolve = trust_dns::ResolverFuture::new(trust_dns::ResolverConfig::default(), trust_dns::ResolverOpts::default());
-        PendingConnect::CreateResolver(resolve)
+    ///For info on default settings see [Builder](struct.Builder.html)
+    pub fn new() -> io::Result<PendingConnect> {
+        Builder::new().build()
     }
 
     #[inline]
@@ -148,7 +134,6 @@ impl Client {
 impl Stream for Client {
     type Item = protocol::message::Response;
     type Error = io::Error;
-
 
     fn poll(&mut self) -> futures::Poll<Option<Self::Item>, Self::Error> {
         self.stream.poll()
@@ -167,13 +152,17 @@ macro_rules! is_async {
 ///Pending establishment of connect toward VNDB server.
 #[must_use = "Must be polled!"]
 pub enum PendingConnect {
-    #[doc(hidden)]
-    CreateResolver(Box<Future<Item=trust_dns::ResolverFuture, Error=trust_dns::ResolveError> + Send>),
-    #[doc(hidden)]
-    LookupIpFuture(trust_dns::LookupIpFuture),
-    #[doc(hidden)]
-    LookupIp(Option<Vec<net::IpAddr>>, tokio::net::ConnectFuture),
-    #[doc(hidden)]
+    ///Connection stage of future.
+    ///
+    ///During this stage it attempts to connect to VNDB using first found address within specified
+    ///deadline.
+    ///In case of failure it shall try another address, if available.
+    ///Otherwise it returns `io::Error`.
+    ///Examine error to determine cause.
+    Connecting(Option<Vec<net::SocketAddr>>, tokio::timer::Deadline<tokio::net::ConnectFuture>, u64),
+    ///Establishing TLS connection stage.
+    ///
+    ///As connection is already established there is no deadline.
     TlsConnect(tokio_tls::ConnectAsync<tokio::net::TcpStream>),
 }
 
@@ -184,21 +173,7 @@ impl Future for PendingConnect {
     fn poll(&mut self) -> futures::Poll<Self::Item, Self::Error> {
         loop {
             let new_state = match self {
-                PendingConnect::CreateResolver(fut) => {
-                    let resolver = is_async!(fut.poll()?);
-                    PendingConnect::LookupIpFuture(resolver.lookup_ip(API_HOST))
-                },
-                PendingConnect::LookupIpFuture(fut) => {
-                    //TODO: it seems to be quite slow?
-                    let ips = is_async!(fut.poll()?);
-                    let mut ips = ips.iter();
-                    let (ips, first_ip) = match ips.next() {
-                        Some(ip) => (Some(ips.collect()), net::SocketAddr::new(ip, API_SSL_PORT)),
-                        None => return Err(io::Error::new(io::ErrorKind::NotFound, "No available IPs for VNDB"))
-                    };
-                    PendingConnect::LookupIp(ips, tokio::net::TcpStream::connect(&first_ip))
-                },
-                PendingConnect::LookupIp(ips, fut) => match fut.poll() {
+                PendingConnect::Connecting(addrs, fut, deadline) => match fut.poll() {
                     Ok(connect) => {
                         let connect = is_async!(connect);
                         let tls_context = TlsConnector::builder().map_err(|error| io::Error::new(io::ErrorKind::Other, error))?
@@ -207,13 +182,18 @@ impl Future for PendingConnect {
                         let tls_connect = tls_context.connect_async(API_HOST, connect);
                         PendingConnect::TlsConnect(tls_connect)
                     },
-                    Err(_) => match ips.as_mut().unwrap().pop() {
-                        Some(ip) => {
-                            let addr = net::SocketAddr::new(ip, API_SSL_PORT);
-                            let ips = ips.take();
-                            PendingConnect::LookupIp(ips, tokio::net::TcpStream::connect(&addr))
+                    Err(error) => match addrs.as_mut().and_then(|addrs| addrs.pop()) {
+                        Some(addr) => {
+                            let addrs = addrs.take();
+                            let connect = tokio::net::TcpStream::connect(&addr);
+                            let connect = tokio::timer::Deadline::new(connect, time::Instant::now() + time::Duration::from_millis(*deadline));
+                            PendingConnect::Connecting(addrs, connect, *deadline)
                         },
-                        None => return Err(io::Error::new(io::ErrorKind::AddrNotAvailable, "Unable to connect to VNDB IP"))
+                        None => return match error.is_elapsed() {
+                            //is_elapsed returns whether future failed to compute in time
+                            true => Err(io::Error::new(io::ErrorKind::TimedOut, "Connection to VNDB timed out")),
+                            false => Err(io::Error::new(io::ErrorKind::AddrNotAvailable, "Unable to connect to VNDB IP"))
+                        }
                     }
                 },
                 PendingConnect::TlsConnect(fut) => {
@@ -226,5 +206,51 @@ impl Future for PendingConnect {
 
             *self = new_state;
         }
+    }
+}
+
+///VNDB Client builder
+pub struct Builder {
+    connect_deadline: u64
+}
+
+impl Builder {
+    ///Creates builder with default values
+    ///
+    ///- `connect_deadline` is `2s`
+    pub fn new() -> Self {
+        Self {
+            deadline: 2_000
+        }
+    }
+
+    ///Sets deadline value milliseconds for establishment of TCP connection.
+    ///
+    ///Note that this time is for each attempt to establish TCP connection,
+    ///in case VNDB would have multiple IP addresses.
+    pub fn connect_deadline(mut self, new_deadline: u64) -> Self {
+        self.deadline = new_deadline;
+        self
+    }
+
+    ///Starts [PendingConnect](enum.PendingConnect.html)
+    pub fn build(self) -> io::Result<PendingConnect> {
+        use self::net::ToSocketAddrs;
+
+        let mut addrs = (API_HOST, API_SSL_PORT).to_socket_addrs()?;
+        let (addrs, first) = match addrs.next() {
+            Some(first) => {
+                let addrs = addrs.collect::<Vec<_>>();
+                match addrs.len() {
+                    0 => (None, first),
+                    _ => (Some(addrs), first)
+                }
+            },
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "No available IPs for VNDB"))
+        };
+
+        let connect = tokio::net::TcpStream::connect(&first);
+        let connect = tokio::timer::Deadline::new(connect, time::Instant::now() + time::Duration::from_millis(self.deadline));
+        Ok(PendingConnect::Connecting(addrs, connect, self.deadline))
     }
 }

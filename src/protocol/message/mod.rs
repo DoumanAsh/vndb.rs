@@ -50,7 +50,7 @@ impl fmt::Display for Request {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 ///VNDB Response
 pub enum Response {
     ///Request is ok

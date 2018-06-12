@@ -9,7 +9,7 @@ use std::ops::Deref;
 
 pub mod results;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 ///API Error
 ///
 ///VNDB API [Reference](https://vndb.org/d11#7)
@@ -35,7 +35,7 @@ impl fmt::Display for VndbError {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 ///DBstats response
 pub struct DBstats {
     ///Number of users.
@@ -97,7 +97,7 @@ pub mod typed {
     pub type VnList = Results<results::VnList>;
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 ///Loosely typed results of get command.
 ///
 ///Due to lack of information on what kind of entity is presented in response,
