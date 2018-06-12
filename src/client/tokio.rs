@@ -220,7 +220,7 @@ impl Builder {
     ///- `connect_deadline` is `2s`
     pub fn new() -> Self {
         Self {
-            deadline: 2_000
+            connect_deadline: 2_000
         }
     }
 
@@ -229,7 +229,7 @@ impl Builder {
     ///Note that this time is for each attempt to establish TCP connection,
     ///in case VNDB would have multiple IP addresses.
     pub fn connect_deadline(mut self, new_deadline: u64) -> Self {
-        self.deadline = new_deadline;
+        self.connect_deadline = new_deadline;
         self
     }
 
@@ -250,7 +250,7 @@ impl Builder {
         };
 
         let connect = tokio::net::TcpStream::connect(&first);
-        let connect = tokio::timer::Deadline::new(connect, time::Instant::now() + time::Duration::from_millis(self.deadline));
-        Ok(PendingConnect::Connecting(addrs, connect, self.deadline))
+        let connect = tokio::timer::Deadline::new(connect, time::Instant::now() + time::Duration::from_millis(self.connect_deadline));
+        Ok(PendingConnect::Connecting(addrs, connect, self.connect_deadline))
     }
 }
