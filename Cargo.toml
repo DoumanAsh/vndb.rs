@@ -33,3 +33,12 @@ tokio-client = ["tokio", "tokio-tls", "native-tls"]
 
 [package.metadata.docs.rs]
 features = ["tokio-client"]
+
+[[test]]
+name = "client"
+path = "tests/client.rs"
+required-features = ["tokio-client"]
+
+[[test]]
+name = "protocol"
+path = "tests/protocol.rs"

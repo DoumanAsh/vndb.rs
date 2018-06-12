@@ -18,4 +18,4 @@ matrix:
 sudo: false
 
 script:
-  - cargo test --target $TARGET --features tokio-client
+  - cargo test --target $TARGET

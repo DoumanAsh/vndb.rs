@@ -19,7 +19,7 @@ install:
 build: false
 
 test_script:
-  - cargo test --features tokio-client
+  - cargo test
 
 branches:
   only:
