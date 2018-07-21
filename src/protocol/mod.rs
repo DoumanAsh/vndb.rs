@@ -55,7 +55,6 @@ impl Decoder for Codec {
             message::Response::from_str(line).map(|result| Some(result))
         } else {
             self.next_idx = buff.len();
-            println!("next_idx={}", self.next_idx);
             Ok(None)
         }
     }
