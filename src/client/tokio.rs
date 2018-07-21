@@ -2,8 +2,9 @@
 
 extern crate tokio;
 extern crate tokio_io;
-extern crate tokio_tls;
-extern crate native_tls;
+extern crate tokio_codec;
+extern crate tokio_rustls;
+extern crate webpki_roots;
 extern crate futures;
 
 use ::protocol;
@@ -13,15 +14,13 @@ use std::time;
 use std::convert;
 use std::net;
 use std::io;
+use std::sync;
 
 use self::futures::{Future, Stream, Sink};
 use self::futures::sync::{mpsc};
-use self::tokio_tls::{TlsConnectorExt};
-use self::native_tls::{TlsConnector};
-use self::tokio_io::AsyncRead;
-use self::tokio_io::codec::Framed;
+use self::tokio_codec::{Framed, Decoder};
 
-type VndbFramed = Framed<tokio_tls::TlsStream<tokio::net::TcpStream>, protocol::Codec>;
+type VndbFramed = Framed<tokio_rustls::TlsStream<tokio::net::TcpStream, tokio_rustls::rustls::ClientSession>, protocol::Codec>;
 
 type VndbSink = futures::stream::SplitSink<VndbFramed>;
 ///VNDB's Stream alias.
@@ -163,7 +162,7 @@ pub enum PendingConnect {
     ///Establishing TLS connection stage.
     ///
     ///As connection is already established there is no deadline.
-    TlsConnect(tokio_tls::ConnectAsync<tokio::net::TcpStream>),
+    TlsConnect(tokio_rustls::ConnectAsync<tokio::net::TcpStream>),
 }
 
 impl Future for PendingConnect {
@@ -175,11 +174,15 @@ impl Future for PendingConnect {
             let new_state = match self {
                 PendingConnect::Connecting(addrs, fut, deadline) => match fut.poll() {
                     Ok(connect) => {
+                        use self::tokio_rustls::{ClientConfigExt, rustls::ClientConfig, webpki::DNSNameRef};
+
                         let connect = is_async!(connect);
-                        let tls_context = TlsConnector::builder().map_err(|error| io::Error::new(io::ErrorKind::Other, error))?
-                                                                 .build()
-                                                                 .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
-                        let tls_connect = tls_context.connect_async(API_HOST, connect);
+
+                        let mut config = ClientConfig::new();
+                        config.root_store.add_server_trust_anchors(&self::webpki_roots::TLS_SERVER_ROOTS);
+                        let config = sync::Arc::new(config);
+                        let domain = DNSNameRef::try_from_ascii_str(API_HOST).expect("Parse VNDB domain");
+                        let tls_connect = config.connect_async(domain, connect);
                         PendingConnect::TlsConnect(tls_connect)
                     },
                     Err(error) => match addrs.as_mut().and_then(|addrs| addrs.pop()) {
@@ -198,7 +201,7 @@ impl Future for PendingConnect {
                 },
                 PendingConnect::TlsConnect(fut) => {
                     let socket = is_async!(fut.poll().map_err(|error| io::Error::new(io::ErrorKind::Other, error))?);
-                    let (sender, receiver) = socket.framed(protocol::Codec).split();
+                    let (sender, receiver) = protocol::Codec::new().framed(socket).split();
                     let client = Client::internal_new(sender, receiver);
                     return Ok(futures::Async::Ready(client));
                 }

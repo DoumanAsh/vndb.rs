@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate vndb;
-extern crate tokio_io;
+extern crate tokio_codec;
 extern crate bytes;
 #[macro_use]
 extern crate serde_json;
@@ -9,7 +9,7 @@ use vndb::protocol;
 use vndb::protocol::message;
 
 use bytes::{BufMut};
-use tokio_io::codec::{Encoder, Decoder};
+use tokio_codec::{Encoder, Decoder};
 
 #[test]
 fn get_type_short() {
@@ -31,7 +31,7 @@ fn encode_request_login_without_auth() {
 
     let mut bytes = bytes::BytesMut::new();
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
     let result = codec.encode(login, &mut bytes);
     assert!(result.is_ok());
     assert_eq!(&bytes[..], &b"login {\"protocol\":2,\"client\":\"test\",\"clientver\":0.666}\x04"[..])
@@ -50,7 +50,7 @@ fn encode_request_login_with_auth() {
 
     let mut bytes = bytes::BytesMut::new();
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
     let result = codec.encode(login, &mut bytes);
     assert!(result.is_ok());
     assert_eq!(&bytes[..], &b"login {\"protocol\":2,\"client\":\"test\",\"clientver\":0.666,\"login\":\"username\",\"password\":\"pass\"}\x04"[..])
@@ -67,7 +67,7 @@ fn encode_request_get_without_options() {
 
     let mut bytes = bytes::BytesMut::new();
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
     let result = codec.encode(get, &mut bytes);
     assert!(result.is_ok());
     assert_eq!(&bytes[..], &b"get vn basic,anime (title = \"Lolka\" or title = \"lolka\")\x04"[..]);
@@ -89,7 +89,7 @@ fn encode_request_get_wit_options() {
 
     let mut bytes = bytes::BytesMut::new();
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
     let result = codec.encode(get, &mut bytes);
     assert!(result.is_ok());
     assert_eq!(&bytes[..], &b"get release basic,details (title = \"Lolka\" or title = \"lolka\") {\"page\":2,\"reverse\":true}\x04"[..]);
@@ -101,7 +101,7 @@ fn encode_request_dbstats() {
     let dbstats = message::Request::DBstats;
 
     let mut bytes = bytes::BytesMut::new();
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
     let result = codec.encode(dbstats, &mut bytes);
     assert!(result.is_ok());
     assert_eq!(&bytes[..], &b"dbstats\x04"[..])
@@ -113,7 +113,30 @@ fn decode_response_ok() {
     let mut bytes = bytes::BytesMut::with_capacity(message.len());
     bytes.put(&message[..]);
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
+
+    let result = codec.decode(&mut bytes);
+    let result = result.unwrap().unwrap();
+
+    match result {
+        message::Response::Ok => assert!(true),
+        _ => assert!(false, "Unexpected type of result")
+    }
+
+    assert_eq!(bytes.len(), 0);
+}
+
+#[test]
+fn decode_response_ok_parts() {
+    let message = b"ok\x04";
+    let mut bytes_part = bytes::BytesMut::with_capacity(message.len());
+    let mut bytes = bytes::BytesMut::with_capacity(message.len());
+    bytes.put(&message[..]);
+
+    let mut codec = protocol::Codec::new();
+
+    let result = codec.decode(&mut bytes_part);
+    assert!(result.unwrap().is_none());
 
     let result = codec.decode(&mut bytes);
     let result = result.unwrap().unwrap();
@@ -132,7 +155,7 @@ fn decode_response_error() {
     let mut bytes = bytes::BytesMut::with_capacity(message.len());
     bytes.put(&message[..]);
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
 
     let result = codec.decode(&mut bytes);
     let result = result.unwrap().unwrap();
@@ -165,7 +188,7 @@ fn decode_response_dbstats() {
     let mut bytes = bytes::BytesMut::with_capacity(message.len());
     bytes.put(&message[..]);
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
 
     let result = codec.decode(&mut bytes);
     let result = result.unwrap().unwrap();
@@ -206,7 +229,7 @@ fn decode_response_results() {
     let mut bytes = bytes::BytesMut::with_capacity(message.len());
     bytes.put(&message[..]);
 
-    let mut codec = protocol::Codec {};
+    let mut codec = protocol::Codec::new();
 
     let result = codec.decode(&mut bytes);
     let result = result.unwrap().unwrap();

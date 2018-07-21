@@ -4,16 +4,27 @@
 
 extern crate bytes;
 
-extern crate tokio_io;
-use self::tokio_io::codec::{Encoder, Decoder};
+extern crate tokio_codec;
+use self::tokio_codec::{Encoder, Decoder};
 
 use std::str;
 use std::io;
 
 pub mod message;
 
+#[derive(Default)]
 ///VNDB's Codec implementation.
-pub struct Codec;
+pub struct Codec {
+    next_idx: usize
+}
+
+impl Codec {
+    #[inline]
+    ///Creates default codec instance.
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 
 impl Codec {
     #[inline]
@@ -27,9 +38,12 @@ impl Decoder for Codec {
     type Error = io::Error;
 
     fn decode(&mut self, buff: &mut bytes::BytesMut) -> io::Result<Option<Self::Item>> {
-        if let Some(i) = buff.iter().position(|&b| b == 4) {
+        if let Some(i) = buff[self.next_idx..].iter().position(|&b| b == 4) {
             // remove the serialized frame from the buffer alongside 0x04.
-            let mut line = buff.split_to(i + 1);
+            let mut line = buff.split_to(self.next_idx + i + 1);
+
+            self.next_idx = 0;
+
             // Remove 0x04
             let line = {
                 let len = line.len() - 1;
@@ -40,6 +54,8 @@ impl Decoder for Codec {
 
             message::Response::from_str(line).map(|result| Some(result))
         } else {
+            self.next_idx = buff.len();
+            println!("next_idx={}", self.next_idx);
             Ok(None)
         }
     }
