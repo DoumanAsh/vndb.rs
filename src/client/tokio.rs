@@ -81,7 +81,10 @@ impl Client {
         let receiver = receiver.map_err(|_| io::Error::new(io::ErrorKind::Other, "Broken vndb worker chan"));
         let work = sink.send_all(receiver)
                        .map(|_| ())
-                       .map_err(|error| panic!("Worker error: {}", error));
+                       .map_err(|error| {
+                           warn!("Worker error: {}", error);
+                           ()
+                       });
 
         tokio::spawn(work);
 
@@ -158,7 +161,7 @@ pub enum PendingConnect {
     ///In case of failure it shall try another address, if available.
     ///Otherwise it returns `io::Error`.
     ///Examine error to determine cause.
-    Connecting(Option<Vec<net::SocketAddr>>, tokio::timer::Deadline<tokio::net::ConnectFuture>, u64),
+    Connecting(Option<Vec<net::SocketAddr>>, tokio::timer::Timeout<tokio::net::ConnectFuture>, u64),
     ///Establishing TLS connection stage.
     ///
     ///As connection is already established there is no deadline.
@@ -189,7 +192,7 @@ impl Future for PendingConnect {
                         Some(addr) => {
                             let addrs = addrs.take();
                             let connect = tokio::net::TcpStream::connect(&addr);
-                            let connect = tokio::timer::Deadline::new(connect, time::Instant::now() + time::Duration::from_millis(*deadline));
+                            let connect = tokio::timer::Timeout::new(connect, time::Duration::from_millis(*deadline));
                             PendingConnect::Connecting(addrs, connect, *deadline)
                         },
                         None => return match error.is_elapsed() {
@@ -253,7 +256,7 @@ impl Builder {
         };
 
         let connect = tokio::net::TcpStream::connect(&first);
-        let connect = tokio::timer::Deadline::new(connect, time::Instant::now() + time::Duration::from_millis(self.connect_deadline));
+        let connect = tokio::timer::Timeout::new(connect, time::Duration::from_millis(self.connect_deadline));
         Ok(PendingConnect::Connecting(addrs, connect, self.connect_deadline))
     }
 }
