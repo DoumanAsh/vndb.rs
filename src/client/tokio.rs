@@ -161,11 +161,11 @@ pub enum PendingConnect {
     ///In case of failure it shall try another address, if available.
     ///Otherwise it returns `io::Error`.
     ///Examine error to determine cause.
-    Connecting(Option<Vec<net::SocketAddr>>, tokio::timer::Timeout<tokio::net::ConnectFuture>, u64),
+    Connecting(Option<Vec<net::SocketAddr>>, tokio::timer::Timeout<tokio::net::tcp::ConnectFuture>, u64),
     ///Establishing TLS connection stage.
     ///
     ///As connection is already established there is no deadline.
-    TlsConnect(tokio_rustls::ConnectAsync<tokio::net::TcpStream>),
+    TlsConnect(tokio_rustls::Connect<tokio::net::TcpStream>),
 }
 
 impl Future for PendingConnect {
@@ -177,15 +177,15 @@ impl Future for PendingConnect {
             let new_state = match self {
                 PendingConnect::Connecting(addrs, fut, deadline) => match fut.poll() {
                     Ok(connect) => {
-                        use self::tokio_rustls::{ClientConfigExt, rustls::ClientConfig, webpki::DNSNameRef};
+                        use self::tokio_rustls::{TlsConnector, rustls::ClientConfig, webpki::DNSNameRef};
 
                         let connect = is_async!(connect);
 
                         let mut config = ClientConfig::new();
                         config.root_store.add_server_trust_anchors(&self::webpki_roots::TLS_SERVER_ROOTS);
-                        let config = sync::Arc::new(config);
+                        let config = TlsConnector::from(sync::Arc::new(config));
                         let domain = DNSNameRef::try_from_ascii_str(API_HOST).expect("Parse VNDB domain");
-                        let tls_connect = config.connect_async(domain, connect);
+                        let tls_connect = config.connect(domain, connect);
                         PendingConnect::TlsConnect(tls_connect)
                     },
                     Err(error) => match addrs.as_mut().and_then(|addrs| addrs.pop()) {

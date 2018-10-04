@@ -2,6 +2,7 @@
 //!
 #![warn(missing_docs)]
 
+#[cfg(feature = "tokio-client")]
 #[macro_use]
 extern crate log;
 #[macro_use]
