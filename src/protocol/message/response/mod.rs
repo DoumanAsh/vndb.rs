@@ -1,8 +1,5 @@
 //!VNDB Responses.
-extern crate serde;
-extern crate serde_json;
-
-use self::serde::{Deserialize};
+use serde::{Deserialize};
 
 use std::fmt;
 use std::ops::Deref;

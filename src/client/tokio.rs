@@ -1,13 +1,6 @@
 //! Tokio base client
 
-extern crate tokio;
-extern crate tokio_io;
-extern crate tokio_codec;
-extern crate tokio_rustls;
-extern crate webpki_roots;
-extern crate futures;
-
-use ::protocol;
+use crate::protocol;
 use super::{API_HOST, API_SSL_PORT};
 
 use std::time;
@@ -16,9 +9,9 @@ use std::net;
 use std::io;
 use std::sync;
 
-use self::futures::{Future, Stream, Sink};
-use self::futures::sync::{mpsc};
-use self::tokio_codec::{Framed, Decoder};
+use futures::{Future, Stream, Sink};
+use futures::sync::{mpsc};
+use tokio_codec::{Framed, Decoder};
 
 type VndbFramed = Framed<tokio_rustls::TlsStream<tokio::net::TcpStream, tokio_rustls::rustls::ClientSession>, protocol::Codec>;
 
@@ -177,12 +170,12 @@ impl Future for PendingConnect {
             let new_state = match self {
                 PendingConnect::Connecting(addrs, fut, deadline) => match fut.poll() {
                     Ok(connect) => {
-                        use self::tokio_rustls::{TlsConnector, rustls::ClientConfig, webpki::DNSNameRef};
+                        use tokio_rustls::{TlsConnector, rustls::ClientConfig, webpki::DNSNameRef};
 
                         let connect = is_async!(connect);
 
                         let mut config = ClientConfig::new();
-                        config.root_store.add_server_trust_anchors(&self::webpki_roots::TLS_SERVER_ROOTS);
+                        config.root_store.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
                         let config = TlsConnector::from(sync::Arc::new(config));
                         let domain = DNSNameRef::try_from_ascii_str(API_HOST).expect("Parse VNDB domain");
                         let tls_connect = config.connect(domain, connect);
@@ -241,7 +234,7 @@ impl Builder {
 
     ///Starts [PendingConnect](enum.PendingConnect.html)
     pub fn build(self) -> io::Result<PendingConnect> {
-        use self::net::ToSocketAddrs;
+        use std::net::ToSocketAddrs;
 
         let mut addrs = (API_HOST, API_SSL_PORT).to_socket_addrs()?;
         let (addrs, first) = match addrs.next() {

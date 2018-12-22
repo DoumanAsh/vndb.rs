@@ -1,6 +1,4 @@
 //!Requests toward VNDB.
-extern crate serde_json;
-
 use std::fmt;
 use std::default::Default;
 

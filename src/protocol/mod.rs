@@ -2,10 +2,7 @@
 //!
 //![API Reference](https://vndb.org/d11).
 
-extern crate bytes;
-
-extern crate tokio_codec;
-use self::tokio_codec::{Encoder, Decoder};
+use tokio_codec::{Encoder, Decoder};
 
 use std::str;
 use std::io;

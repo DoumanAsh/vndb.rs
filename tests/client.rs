@@ -1,7 +1,5 @@
 #[macro_use]
 extern crate vndb;
-extern crate tokio;
-extern crate futures;
 
 use futures::{Future, Stream};
 

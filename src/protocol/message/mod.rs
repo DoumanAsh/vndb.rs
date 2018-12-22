@@ -1,7 +1,5 @@
 //!VNDB message.
 
-extern crate serde_json;
-
 use std::convert;
 use std::fmt;
 use std::io;

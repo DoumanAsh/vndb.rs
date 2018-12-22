@@ -1,7 +1,5 @@
 #[macro_use]
 extern crate vndb;
-extern crate tokio_codec;
-extern crate bytes;
 #[macro_use]
 extern crate serde_json;
 

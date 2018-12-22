@@ -1,8 +1,6 @@
 //! VNDB entities types.
-extern crate serde;
-
-use self::serde::{Serialize, Deserialize};
-use self::serde::de::Error;
+use serde::{Serialize, Deserialize};
+use serde::de::Error;
 
 #[derive(Deserialize, Serialize, Debug)]
 ///Links for VN.

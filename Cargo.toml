@@ -4,6 +4,7 @@ version = "0.6.3"
 authors = ["Douman <douman@gmx.se>"]
 description = "Kawaii VNDB API"
 license = "MIT"
+edition = "2018"
 
 keywords = ["vndb"]
 
