@@ -152,7 +152,7 @@ pub mod get {
         ///Returns short ID alias of type.
         ///
         ///Can be used in VNDB links as `<short><id>`
-        pub fn short<'a>(&'a self) -> &'a str {
+        pub fn short(&self) -> &str {
             &self.inner[..1]
         }
     }
