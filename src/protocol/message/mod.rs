@@ -1,8 +1,6 @@
-//!VNDB message.
+//!VNDB messages serialization/de-serialization.
 
-use std::convert;
-use std::fmt;
-use std::io;
+use core::{str, fmt, convert};
 
 pub mod request;
 pub mod response;
@@ -11,34 +9,34 @@ pub mod response;
 ///VNDB Request
 ///
 ///On error returns [Response::Error](response/Struct.VndbError.html).
-pub enum Request {
+pub enum Request<'a> {
     ///Login request.
     ///
     ///On success returns `Response::Ok`
-    Login(request::Login),
+    Login(request::Login<'a>),
     ///Get request.
     ///
     ///On success returns [Response::Results](response/Struct.Results.html)
-    Get(request::Get),
+    Get(request::Get<'a>),
     ///VNDB statistic request.
     ///
     ///On success returns [Response::DBstats](response/Struct.DBstats.html)
     DBstats
 }
 
-impl convert::From<request::Login> for Request {
-    fn from(login: request::Login) -> Self {
+impl<'a> convert::From<request::Login<'a>> for Request<'a> {
+    fn from(login: request::Login<'a>) -> Self {
         Request::Login(login)
     }
 }
 
-impl convert::From<request::Get> for Request {
-    fn from(get: request::Get) -> Self {
+impl<'a> convert::From<request::Get<'a>> for Request<'a> {
+    fn from(get: request::Get<'a>) -> Self {
         Request::Get(get)
     }
 }
 
-impl fmt::Display for Request {
+impl<'a> fmt::Display for Request<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Request::Login(ref login) => write!(f, "{}\x04", login),
@@ -79,40 +77,78 @@ impl convert::From<response::VndbError> for Response {
     }
 }
 
-macro_rules! extract_field {
-    ($field:expr, $msg:expr) => {
-        match $field {
-            Some(field) => field,
-            None => return Err(io::Error::new(io::ErrorKind::InvalidData, $msg))
-        }
-    }
-}
-
 impl Response {
-    ///Creates new instance of Response by parsing raw string with it.
-    ///
-    ///Note that special character `0x04` at the end MUST not be included.
-    pub fn from_str(msg: &str) -> io::Result<Self> {
+    ///Parses response from text message without 0x04 byte.
+    pub fn from_str<'a>(msg: &'a str) -> Result<Self, ResponseParseError<'a>> {
         let mut split_msg = msg.splitn(2, ' ');
 
-        let command = extract_field!(split_msg.next(), "VNDB sent empty response.");
+        let command = match split_msg.next() {
+            Some(command) => command,
+            None => return Err(ResponseParseError::EmptyResponse),
+        };
 
         match command {
             "ok" => Ok(Response::Ok),
-            "results" => {
-                let data = extract_field!(split_msg.next(), "VNDB sent empty results.");
-                Ok(Response::Results(response::Results::from_str(data)?))
+            "results" => match split_msg.next() {
+                Some(results) => match response::Results::from_str(results) {
+                    Ok(results) => Ok(Response::Results(results)),
+                    Err(error) => Err(ResponseParseError::InvalidResults(error)),
+                },
+                None => Err(ResponseParseError::EmptyResults),
             },
-            "dbstats" => {
-                let data = extract_field!(split_msg.next(), "VNDB sent empty dbstats.");
-                Ok(Response::DBstats(serde_json::from_str(data)?))
+            "dbstats" => match split_msg.next() {
+                Some(dbstats) => match serde_json::from_str(dbstats) {
+                    Ok(dbstats) => Ok(Response::DBstats(dbstats)),
+                    Err(error) => Err(ResponseParseError::InvalidDbStats(error)),
+                },
+                None => Err(ResponseParseError::EmptyDbStats),
             },
-            "error" => {
-                let data = extract_field!(split_msg.next(), "VNDB sent empty error.");
-                Ok(Response::Error(response::VndbError::from_str(data)?))
-            },
-            _ => Err(io::Error::new(io::ErrorKind::InvalidData, format!("Unexpected command='{}'", command)))
+            "error" => match split_msg.next() {
+                Some(error) => match serde_json::from_str(error) {
+                    Ok(error) => Ok(Response::Error(error)),
+                    Err(error) => Err(ResponseParseError::InvalidError(error)),
+                },
+                None => Err(ResponseParseError::EmptyDbStats),
+            }
+            command => Err(ResponseParseError::UnknownComamnd(command)),
         }
-
     }
 }
+
+#[derive(Debug)]
+///Result of Response parser
+pub enum ResponseParseError<'a> {
+    ///Response is empty
+    EmptyResponse,
+    ///Results is without payload
+    EmptyResults,
+    ///DBstats is without payload
+    EmptyDbStats,
+    ///Error is without payload
+    EmptyError,
+    ///Invalid Results payload.
+    InvalidResults(serde_json::Error),
+    ///Invalid DBstats payload.
+    InvalidDbStats(serde_json::Error),
+    ///Invalid Error payload.
+    InvalidError(serde_json::Error),
+    ///Unknown command is specified.
+    UnknownComamnd(&'a str),
+}
+
+impl<'a> fmt::Display for ResponseParseError<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &ResponseParseError::EmptyResponse => write!(f, "VNDB sent empty response."),
+            &ResponseParseError::EmptyResults => write!(f, "VNDB sent Results with no payload."),
+            &ResponseParseError::EmptyDbStats => write!(f, "VNDB sent DBstats with no payload."),
+            &ResponseParseError::EmptyError => write!(f, "VNDB sent Error with no payload."),
+            &ResponseParseError::InvalidResults(ref error) => write!(f, "VNDB sent invalid JSON in Results: {}", error),
+            &ResponseParseError::InvalidDbStats(ref error) => write!(f, "VNDB sent invalid JSON in DBstats: {}", error),
+            &ResponseParseError::InvalidError(ref error) => write!(f, "VNDB sent invalid JSON in Error: {}", error),
+            &ResponseParseError::UnknownComamnd(cmd) => write!(f, "VNDB sent unknown command: {}", cmd),
+        }
+    }
+}
+
+impl<'a> std::error::Error for ResponseParseError<'a> {}
