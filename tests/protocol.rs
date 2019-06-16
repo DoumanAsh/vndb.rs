@@ -1,13 +1,7 @@
-#[macro_use]
-extern crate vndb;
-#[macro_use]
-extern crate serde_json;
-
-use vndb::protocol;
+use vndb::{filter};
 use vndb::protocol::message;
 
-use bytes::{BufMut};
-use tokio_codec::{Encoder, Decoder};
+use serde_json::json;
 
 #[test]
 fn get_type_short() {
@@ -17,45 +11,35 @@ fn get_type_short() {
 }
 
 #[test]
-fn encode_request_login_without_auth() {
+fn format_request_login_without_auth() {
     let login = message::request::Login {
         protocol: 2,
         client: "test",
         clientver: 0.666,
-        login: None,
-        password: None
+        creds: None,
     };
     let login = message::Request::Login(login);
 
-    let mut bytes = bytes::BytesMut::new();
-
-    let mut codec = protocol::Codec::new();
-    let result = codec.encode(login, &mut bytes);
-    assert!(result.is_ok());
-    assert_eq!(&bytes[..], &b"login {\"protocol\":2,\"client\":\"test\",\"clientver\":0.666}\x04"[..])
+    let result = format!("{}", login);
+    assert_eq!(result, "login {\"protocol\":2,\"client\":\"test\",\"clientver\":0.666}\x04")
 }
 
 #[test]
-fn encode_request_login_with_auth() {
+fn format_request_login_with_auth() {
     let login = message::request::Login {
         protocol: 2,
         client: "test",
         clientver: 0.666,
-        login: Some("username".to_owned()),
-        password: Some("pass".to_owned())
+        creds: Some(("username", "pass")),
     };
     let login = message::Request::Login(login);
 
-    let mut bytes = bytes::BytesMut::new();
-
-    let mut codec = protocol::Codec::new();
-    let result = codec.encode(login, &mut bytes);
-    assert!(result.is_ok());
-    assert_eq!(&bytes[..], &b"login {\"protocol\":2,\"client\":\"test\",\"clientver\":0.666,\"login\":\"username\",\"password\":\"pass\"}\x04"[..])
+    let result = format!("{}", login);
+    assert_eq!(result, "login {\"protocol\":2,\"client\":\"test\",\"clientver\":0.666,\"username\":\"username\",\"password\":\"pass\"}\x04")
 }
 
 #[test]
-fn encode_request_get_without_options() {
+fn format_request_get_without_options() {
     let get = message::Request::Get(message::request::Get {
         kind: message::request::get::Type::vn(),
         flags: message::request::get::Flags::new().basic().anime(),
@@ -63,16 +47,12 @@ fn encode_request_get_without_options() {
         options: None
     });
 
-    let mut bytes = bytes::BytesMut::new();
-
-    let mut codec = protocol::Codec::new();
-    let result = codec.encode(get, &mut bytes);
-    assert!(result.is_ok());
-    assert_eq!(&bytes[..], &b"get vn basic,anime (title = \"Lolka\" or title = \"lolka\")\x04"[..]);
+    let result = format!("{}", get);
+    assert_eq!(result, "get vn basic,anime (title = \"Lolka\" or title = \"lolka\")\x04");
 }
 
 #[test]
-fn encode_request_get_wit_options() {
+fn format_request_get_wit_options() {
     let get = message::Request::Get(message::request::Get {
         kind: message::request::get::Type::release(),
         flags: message::request::get::Flags::new().basic().details(),
@@ -85,79 +65,34 @@ fn encode_request_get_wit_options() {
         })
     });
 
-    let mut bytes = bytes::BytesMut::new();
-
-    let mut codec = protocol::Codec::new();
-    let result = codec.encode(get, &mut bytes);
-    assert!(result.is_ok());
-    assert_eq!(&bytes[..], &b"get release basic,details (title = \"Lolka\" or title = \"lolka\") {\"page\":2,\"reverse\":true}\x04"[..]);
+    let result = format!("{}", get);
+    assert_eq!(result, "get release basic,details (title = \"Lolka\" or title = \"lolka\") {\"page\":2,\"reverse\":true}\x04");
 
 }
 
 #[test]
-fn encode_request_dbstats() {
+fn format_request_dbstats() {
     let dbstats = message::Request::DBstats;
 
-    let mut bytes = bytes::BytesMut::new();
-    let mut codec = protocol::Codec::new();
-    let result = codec.encode(dbstats, &mut bytes);
-    assert!(result.is_ok());
-    assert_eq!(&bytes[..], &b"dbstats\x04"[..])
+    let result = format!("{}", dbstats);
+    assert_eq!(result, "dbstats\x04")
 }
 
 #[test]
-fn decode_response_ok() {
-    let message = b"ok\x04";
-    let mut bytes = bytes::BytesMut::with_capacity(message.len());
-    bytes.put(&message[..]);
-
-    let mut codec = protocol::Codec::new();
-
-    let result = codec.decode(&mut bytes);
-    let result = result.unwrap().unwrap();
-
+fn parse_response_ok() {
+    let message = "ok";
+    let result = message::Response::from_str(message).expect("To parse");
     match result {
         message::Response::Ok => assert!(true),
         _ => assert!(false, "Unexpected type of result")
     }
-
-    assert_eq!(bytes.len(), 0);
 }
 
 #[test]
-fn decode_response_ok_parts() {
-    let message = b"ok\x04";
-    let mut bytes_part = bytes::BytesMut::with_capacity(message.len());
-    let mut bytes = bytes::BytesMut::with_capacity(message.len());
-    bytes.put(&message[..]);
+fn parse_response_error() {
+    let message = "error {\"id\":\"parse\", \"msg\":\"Invalid command or argument\"}";
 
-    let mut codec = protocol::Codec::new();
-
-    let result = codec.decode(&mut bytes_part);
-    assert!(result.unwrap().is_none());
-
-    let result = codec.decode(&mut bytes);
-    let result = result.unwrap().unwrap();
-
-    match result {
-        message::Response::Ok => assert!(true),
-        _ => assert!(false, "Unexpected type of result")
-    }
-
-    assert_eq!(bytes.len(), 0);
-}
-
-#[test]
-fn decode_response_error() {
-    let message = b"error {\"id\":\"parse\", \"msg\":\"Invalid command or argument\"}\x04";
-    let mut bytes = bytes::BytesMut::with_capacity(message.len());
-    bytes.put(&message[..]);
-
-    let mut codec = protocol::Codec::new();
-
-    let result = codec.decode(&mut bytes);
-    let result = result.unwrap().unwrap();
-
+    let result = message::Response::from_str(message).expect("To parse");
     match result {
         message::Response::Error(error) => {
             assert_eq!(error.id, "parse");
@@ -165,14 +100,11 @@ fn decode_response_error() {
         },
         _ => assert!(false, "Unexpected type of result")
     }
-
-    assert_eq!(bytes.len(), 0);
-
 }
 
 #[test]
-fn decode_response_dbstats() {
-    let message = b"dbstats {
+fn parse_response_dbstats() {
+    let message = "dbstats {
         \"users\":49084,
         \"threads\":3998,
         \"tags\":1627,
@@ -181,15 +113,9 @@ fn decode_response_dbstats() {
         \"chars\":14046,
         \"posts\":52470,
         \"vn\":13051,
-        \"traits\":1272}\x04";
+        \"traits\":1272}";
 
-    let mut bytes = bytes::BytesMut::with_capacity(message.len());
-    bytes.put(&message[..]);
-
-    let mut codec = protocol::Codec::new();
-
-    let result = codec.decode(&mut bytes);
-    let result = result.unwrap().unwrap();
+    let result = message::Response::from_str(message).expect("To parse");
 
     match result {
         message::Response::DBstats(stats) => {
@@ -204,13 +130,11 @@ fn decode_response_dbstats() {
         },
         _ => assert!(false, "Unexpected type of result")
     }
-
-    assert_eq!(bytes.len(), 0);
 }
 
 #[test]
-fn decode_response_results() {
-    let message = b"results {
+fn parse_response_results() {
+    let message = "results {
         \"num\":1,
         \"more\":false,
         \"items\":[{
@@ -222,16 +146,9 @@ fn decode_response_results() {
             \"platforms\": [\"drc\",\"ps2\",\"psp\",\"win\"],
             \"anime\": []
         }]
-    }\x04";
+    }";
 
-    let mut bytes = bytes::BytesMut::with_capacity(message.len());
-    bytes.put(&message[..]);
-
-    let mut codec = protocol::Codec::new();
-
-    let result = codec.decode(&mut bytes);
-    let result = result.unwrap().unwrap();
-
+    let result = message::Response::from_str(message).expect("To parse");
     match result {
         message::Response::Results(results) => {
             assert_eq!(results["num"], json!(1));
@@ -250,7 +167,4 @@ fn decode_response_results() {
         },
         _ => assert!(false, "Unexpected type of result")
     }
-
-    assert_eq!(bytes.len(), 0);
-
 }
