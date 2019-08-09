@@ -79,7 +79,7 @@ impl convert::From<response::VndbError> for Response {
 
 impl Response {
     ///Parses response from text message without 0x04 byte.
-    pub fn from_str<'a>(msg: &'a str) -> Result<Self, ResponseParseError<'a>> {
+    pub fn from_str<'a>(msg: &'a str) -> Result<Self, ResponseParseError> {
         let mut split_msg = msg.splitn(2, ' ');
 
         let command = match split_msg.next() {
@@ -110,14 +110,14 @@ impl Response {
                 },
                 None => Err(ResponseParseError::EmptyDbStats),
             }
-            command => Err(ResponseParseError::UnknownComamnd(command)),
+            _ => Err(ResponseParseError::UnknownComamnd),
         }
     }
 }
 
 #[derive(Debug)]
 ///Result of Response parser
-pub enum ResponseParseError<'a> {
+pub enum ResponseParseError {
     ///Response is empty
     EmptyResponse,
     ///Results is without payload
@@ -133,10 +133,10 @@ pub enum ResponseParseError<'a> {
     ///Invalid Error payload.
     InvalidError(serde_json::Error),
     ///Unknown command is specified.
-    UnknownComamnd(&'a str),
+    UnknownComamnd,
 }
 
-impl<'a> fmt::Display for ResponseParseError<'a> {
+impl fmt::Display for ResponseParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &ResponseParseError::EmptyResponse => write!(f, "VNDB sent empty response."),
@@ -146,9 +146,9 @@ impl<'a> fmt::Display for ResponseParseError<'a> {
             &ResponseParseError::InvalidResults(ref error) => write!(f, "VNDB sent invalid JSON in Results: {}", error),
             &ResponseParseError::InvalidDbStats(ref error) => write!(f, "VNDB sent invalid JSON in DBstats: {}", error),
             &ResponseParseError::InvalidError(ref error) => write!(f, "VNDB sent invalid JSON in Error: {}", error),
-            &ResponseParseError::UnknownComamnd(cmd) => write!(f, "VNDB sent unknown command: {}", cmd),
+            &ResponseParseError::UnknownComamnd => write!(f, "VNDB sent unknown command"),
         }
     }
 }
 
-impl<'a> std::error::Error for ResponseParseError<'a> {}
+impl std::error::Error for ResponseParseError {}
