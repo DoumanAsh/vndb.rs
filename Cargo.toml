@@ -25,7 +25,7 @@ serde_json = "1"
 bytes = { version = "0.4", optional = true }
 tokio-codec = { version = "0.2.0-alpha", optional = true }
 tokio-io = { version = "0.2.0-alpha", optional = true }
-tokio-tcp = { version = "0.2.0-alpha", optional = true }
+tokio-net = { version = "0.2.0-alpha", features = ["tcp"], optional = true }
 futures-core-preview = { version = "0.3.0-alpha", optional = true }
 futures-sink-preview = { version = "0.3.0-alpha", optional = true }
 
@@ -38,7 +38,7 @@ tokio = "0.2.0-alpha"
 [features]
 default = []
 # Enables tokio related stuff
-tokio-on = ["bytes", "tokio-codec", "tokio-io", "tokio-tcp", "futures-core-preview", "futures-sink-preview"]
+tokio-on = ["bytes", "tokio-codec", "tokio-io", "tokio-net", "futures-core-preview", "futures-sink-preview"]
 # Eanbles rustls
 rustls = ["tokio-rustls", "webpki-roots"]
 

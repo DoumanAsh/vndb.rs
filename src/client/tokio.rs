@@ -71,11 +71,11 @@ impl<T: tokio_io::AsyncWrite + tokio_io::AsyncRead + Unpin> Client<T> {
 }
 
 
-async fn connect_tcp(host: &str, port: u16) -> io::Result<tokio_tcp::TcpStream> {
+async fn connect_tcp(host: &str, port: u16) -> io::Result<tokio_net::tcp::TcpStream> {
     let addrs = (host, port).to_socket_addrs()?;
 
     for addr in addrs {
-        match matsu!(tokio_tcp::TcpStream::connect(&addr)) {
+        match matsu!(tokio_net::tcp::TcpStream::connect(&addr)) {
             Ok(io) => return Ok(io),
             Err(_) => continue,
         }
@@ -84,7 +84,7 @@ async fn connect_tcp(host: &str, port: u16) -> io::Result<tokio_tcp::TcpStream> 
     return Err(io::Error::new(io::ErrorKind::NotFound, "Unable to connect to api.vndb.org"));
 }
 
-impl Client<tokio_tcp::TcpStream> {
+impl Client<tokio_net::tcp::TcpStream> {
     #[inline]
     ///Connects to vndb server using plain TCP
     ///
@@ -95,7 +95,7 @@ impl Client<tokio_tcp::TcpStream> {
 }
 
 #[cfg(feature = "rustls")]
-impl Client<tokio_rustls::client::TlsStream<tokio_tcp::TcpStream>> {
+impl Client<tokio_rustls::client::TlsStream<tokio_net::tcp::TcpStream>> {
     #[inline]
     ///Connects to vndb server using plain TCP
     ///
