@@ -6,7 +6,6 @@
 //!
 #![warn(missing_docs)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::style))]
-#![cfg_attr(feature = "tokio-on", feature(async_await))]
 
 pub mod protocol;
 #[cfg(feature = "tokio-on")]
