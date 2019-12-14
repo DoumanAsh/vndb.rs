@@ -57,4 +57,4 @@ version = "0.2"
 features = ["rt-core", "macros"]
 
 [package.metadata.docs.rs]
-features = ["rustls-on", "tokio"]
+features = ["rustls-on", "tokio-on"]
