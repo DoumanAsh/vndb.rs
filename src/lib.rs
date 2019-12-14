@@ -8,5 +8,6 @@
 #![warn(missing_docs)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::style))]
 
+mod utils;
 pub mod protocol;
 pub mod client;

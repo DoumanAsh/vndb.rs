@@ -6,6 +6,7 @@ use tokio::net;
 use tokio::io::{self, AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 
 use super::{API_HOST, API_PORT};
+use crate::utils::AsPin;
 
 ///Tokio based VNDB Client
 pub struct Client<IO> where IO: AsyncRead {
@@ -66,18 +67,14 @@ impl<IO: AsyncRead + AsyncWrite> Client<IO> {
     #[inline]
     ///Sends request to the server
     pub async fn send(&mut self, req: &crate::protocol::Request<'_>) -> io::Result<()> {
-        let io = unsafe {
-            core::pin::Pin::new_unchecked(&mut self.io)
-        };
+        let io = self.io.as_pin();
         BufReader::get_pin_mut(io).write_all(req.to_string().as_bytes()).await
     }
 
     #[inline]
     ///Flushes sent requests
     pub async fn flush(&mut self) -> io::Result<()> {
-        let io = unsafe {
-            core::pin::Pin::new_unchecked(&mut self.io)
-        };
+        let io = self.io.as_pin();
         BufReader::get_pin_mut(io).flush().await
     }
 }
@@ -95,9 +92,7 @@ impl<IO: AsyncRead> Client<IO> {
     ///
     ///If `None` is returned, then it means connection is closed.
     pub async fn receive(&mut self) -> io::Result<Option<crate::protocol::Response>> {
-        let mut io = unsafe {
-            core::pin::Pin::new_unchecked(&mut self.io)
-        };
+        let mut io = self.io.as_pin();
 
         let size = io.read_until(0x04, &mut self.read_buf).await?;
 
