@@ -33,15 +33,28 @@ optional = true
 version = "0.21"
 optional = true
 
+[dependencies.tokio]
+version = "0.2"
+optional = true
+features = ["net", "io-util"]
+
+[dependencies.tokio-rustls]
+version = "0.12"
+optional = true
+
 [dependencies]
 serde_json = "1"
 
 [features]
 default = []
-# Enables tokio related stuff
-tokio-on = []
+# Enables tokio client together with rustls
+tokio-on = ["tokio", "tokio-rustls", "rustls-on"]
 # Eanbles rustls
 rustls-on = ["rustls", "webpki", "webpki-roots"]
 
+[dev-dependencies.tokio]
+version = "0.2"
+features = ["rt-core", "macros"]
+
 [package.metadata.docs.rs]
-features = ["rustls-on"]
+features = ["rustls-on", "tokio"]

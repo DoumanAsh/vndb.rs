@@ -40,4 +40,4 @@ jobs:
         rustc --version
 
     - name: Test
-      run: cargo test --all --features rustls-on
+      run: cargo test --all --features rustls-on,tokio-on

@@ -1,7 +1,8 @@
 use vndb::protocol::message;
 
-#[test]
-fn simple_client_should_send_message_over_tcp() {
+#[cfg(feature = "tokio-on")]
+#[tokio::test]
+async fn tokio_client_should_send_message_over_tcp() {
     let get = message::request::Get {
         kind: message::request::get::Type::vn(),
         flags: message::request::get::Flags::new().basic().details(),
@@ -14,28 +15,28 @@ fn simple_client_should_send_message_over_tcp() {
         })
     };
 
-    let mut client = vndb::client::simple::Client::connect().expect("To connect");
-    client.reconnect().expect("Reconnect");
+    let mut client = vndb::client::tokio::Client::connect().await.expect("To connect");
+    client.reconnect().await.expect("Reconnect");
 
-    client.send(&message::request::Login::new(None).into()).expect("To send login");
-    client.send(&message::Request::DBstats).expect("To send DbStats");
-    client.send(&get.into()).expect("To send Get");
-    client.flush().expect("To flush");
+    client.send(&message::request::Login::new(None).into()).await.expect("To send login");
+    client.send(&message::Request::DBstats).await.expect("To send DbStats");
+    client.send(&get.into()).await.expect("To send Get");
+    client.flush().await.expect("To flush");
 
 
-    match client.receive().expect("To receive message").expect("To not fail receiving") {
+    match client.receive().await.expect("To receive message").expect("To not fail receiving") {
         message::Response::Ok => println!("Ok"),
         response => panic!("Unexpected response={:?}", response),
     }
 
-    match client.receive().expect("To receive message").expect("To not fail receiving") {
+    match client.receive().await.expect("To receive message").expect("To not fail receiving") {
         message::Response::DBstats(response) => {
             println!("DBstats={:?}", response);
         },
         response => panic!("Unexpected response={:?}", response),
     }
 
-    match client.receive().expect("To receive message").expect("To not fail receiving") {
+    match client.receive().await.expect("To receive message").expect("To not fail receiving") {
         message::Response::Results(response) => {
             let results = response.vn().expect("Parse into VN Results");
             println!("Get Results={:?}", results);
@@ -44,9 +45,9 @@ fn simple_client_should_send_message_over_tcp() {
     }
 }
 
-#[cfg(feature = "rustls-on")]
-#[test]
-fn simple_tls_client_should_send_message_over_tcp() {
+#[cfg(all(feature = "tokio-on", feature = "rustls-on"))]
+#[tokio::test]
+async fn tokio_client_should_send_message_over_tls() {
     let get = message::request::Get {
         kind: message::request::get::Type::vn(),
         flags: message::request::get::Flags::new().basic().details(),
@@ -59,28 +60,28 @@ fn simple_tls_client_should_send_message_over_tcp() {
         })
     };
 
-    let mut client = vndb::client::simple::Client::connect_tls().expect("To connect");
-    client.reconnect_tls().expect("Reconnect");
+    let mut client = vndb::client::tokio::Client::connect_tls().await.expect("To connect");
+    client.reconnect_tls().await.expect("Reconnect");
 
-    client.send(&message::request::Login::new(None).into()).expect("To send login");
-    client.send(&message::Request::DBstats).expect("To send DbStats");
-    client.send(&get.into()).expect("To send Get");
-    client.flush().expect("To flush");
+    client.send(&message::request::Login::new(None).into()).await.expect("To send login");
+    client.send(&message::Request::DBstats).await.expect("To send DbStats");
+    client.send(&get.into()).await.expect("To send Get");
+    client.flush().await.expect("To flush");
 
 
-    match client.receive().expect("To receive message").expect("To not fail receiving") {
+    match client.receive().await.expect("To receive message").expect("To not fail receiving") {
         message::Response::Ok => println!("Ok"),
         response => panic!("Unexpected response={:?}", response),
     }
 
-    match client.receive().expect("To receive message").expect("To not fail receiving") {
+    match client.receive().await.expect("To receive message").expect("To not fail receiving") {
         message::Response::DBstats(response) => {
             println!("DBstats={:?}", response);
         },
         response => panic!("Unexpected response={:?}", response),
     }
 
-    match client.receive().expect("To receive message").expect("To not fail receiving") {
+    match client.receive().await.expect("To receive message").expect("To not fail receiving") {
         message::Response::Results(response) => {
             let results = response.vn().expect("Parse into VN Results");
             println!("Get Results={:?}", results);

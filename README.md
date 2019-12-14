@@ -9,5 +9,6 @@ vndb.rs
 Kawaii VNDB API
 
 ## Features
+* Tokio support
 * Provides protocol requests/responses for user to use directly.
 * Optional parsing of get responses into static structs.
