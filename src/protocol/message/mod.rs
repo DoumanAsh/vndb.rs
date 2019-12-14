@@ -79,7 +79,7 @@ impl convert::From<response::VndbError> for Response {
 
 impl Response {
     ///Parses response from text message without 0x04 byte.
-    pub fn from_str<'a>(msg: &'a str) -> Result<Self, ResponseParseError> {
+    pub fn from_str(msg: &str) -> Result<Self, ResponseParseError> {
         let mut split_msg = msg.splitn(2, ' ');
 
         let command = match split_msg.next() {

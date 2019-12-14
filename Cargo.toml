@@ -20,41 +20,28 @@ travis-ci = { repository = "DoumanAsh/vndb.rs" }
 version = "1"
 features = ["derive"]
 
+[dependencies.rustls]
+version = "0.16"
+default-features = false
+optional = true
+
+[dependencies.webpki-roots]
+version = "0.18"
+optional = true
+
+[dependencies.webpki]
+version = "0.21"
+optional = true
+
 [dependencies]
 serde_json = "1"
-bytes = { version = "0.4", optional = true }
-tokio-codec = { version = "0.2.0-alpha", optional = true }
-tokio-io = { version = "0.2.0-alpha", optional = true }
-tokio-net = { version = "0.2.0-alpha", features = ["tcp"], optional = true }
-futures-core-preview = { version = "0.3.0-alpha", optional = true }
-futures-sink-preview = { version = "0.3.0-alpha", optional = true }
-
-tokio-rustls = { version = "0.12.0-alpha", optional = true }
-webpki-roots = { version = "0.17", optional = true }
-
-[dev-dependencies]
-tokio = "0.2.0-alpha"
 
 [features]
 default = []
 # Enables tokio related stuff
-tokio-on = ["bytes", "tokio-codec", "tokio-io", "tokio-net", "futures-core-preview", "futures-sink-preview"]
+tokio-on = []
 # Eanbles rustls
-rustls = ["tokio-rustls", "webpki-roots"]
+rustls-on = ["rustls", "webpki", "webpki-roots"]
 
 [package.metadata.docs.rs]
-features = ["tokio-on"]
-
-[[test]]
-name = "client"
-path = "tests/client.rs"
-required-features = ["tokio-on", "rustls"]
-
-[[test]]
-name = "codec"
-path = "tests/codec.rs"
-required-features = ["tokio-on"]
-
-[[test]]
-name = "protocol"
-path = "tests/protocol.rs"
+features = ["rustls-on"]

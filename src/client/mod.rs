@@ -7,5 +7,4 @@ pub const API_PORT: u16 = 19534;
 ///VNDB SSL port
 pub const API_SSL_PORT: u16 = 19535;
 
-#[cfg(feature = "tokio-on")]
-pub mod tokio;
+pub mod simple;
