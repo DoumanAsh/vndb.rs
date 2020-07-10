@@ -105,13 +105,10 @@ fn parse_response_error() {
 #[test]
 fn parse_response_dbstats() {
     let message = "dbstats {
-        \"users\":49084,
-        \"threads\":3998,
         \"tags\":1627,
         \"releases\":28071,
         \"producers\":3456,
         \"chars\":14046,
-        \"posts\":52470,
         \"vn\":13051,
         \"traits\":1272}";
 
@@ -119,12 +116,9 @@ fn parse_response_dbstats() {
 
     match result {
         message::Response::DBstats(stats) => {
-            assert_eq!(stats.users, 49084);
-            assert_eq!(stats.threads, 3998);
             assert_eq!(stats.tags, 1627);
             assert_eq!(stats.producers, 3456);
             assert_eq!(stats.chars, 14046);
-            assert_eq!(stats.posts, 52470);
             assert_eq!(stats.vn, 13051);
             assert_eq!(stats.traits, 1272);
         },

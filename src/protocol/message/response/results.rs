@@ -7,10 +7,8 @@ use serde::de::Error;
 ///
 ///All fields may be omitted by VNDB.
 pub struct VnLinks {
-    ///The name of the related article on the Wikipedia
-    pub wikipedia: Option<String>,
-    ///The URL-encoded tag used on [encubed](http://novelnews.net).
-    pub encubed: Option<String>,
+    ///Wikipedia identifier for the VN
+    pub wikidata: Option<String>,
     ///The name part of the url on renai.us.
     pub renai: Option<String>
 }
@@ -78,8 +76,8 @@ pub struct VnScreen {
     pub image: String,
     ///Release's ID.
     pub rid: u64,
-    ///Whether it is not safe for work or not.
-    pub nsfw: bool,
+    ///Release's flags
+    pub flagging: Option<VnImageFlags>,
     ///Image's height.
     pub height: u16,
     ///Image's width.
@@ -106,6 +104,18 @@ pub struct VnStaff {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
+///Flags of the main VN image
+pub struct VnImageFlags {
+    ///number of flagging votes.
+    #[serde(rename = "votecount", deserialize_with = "crate::utils::serde_from_str")]
+    pub vote_count: usize,
+    ///Sexual score between 0 (safe) and 2 (explicit).
+    pub sexual_avg: Option<f32>,
+    ///Violence score between 0 (tame) and 2 (brutal).
+    pub violence_avg: Option<f32>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 ///VN data representation. Returned by `get vn`
 pub struct Vn {
     ///Unique identifier of VN.
@@ -124,21 +134,24 @@ pub struct Vn {
     ///
     ///Optionally provided when `basic` flag is specified.
     pub released: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Languages in which VN is available.
     ///
     ///Provided when `basic` flag is specified.
     ///Can be empty array.
-    pub languages: Option<Vec<String>>,
+    pub languages: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Languages of the first release.
     ///
     ///Optionally provided when `basic` flag is specified.
     ///Can be empty array.
-    pub orig_lang: Option<Vec<String>>,
+    pub orig_lang: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Platforms on which VN is available.
     ///
     ///Optionally provided when `basic` flag is specified.
     ///Can be empty array.
-    pub platforms: Option<Vec<String>>,
+    pub platforms: Vec<String>,
 
     //Details
     ///Aliases, separated by newline.
@@ -165,34 +178,36 @@ pub struct Vn {
     ///Provided when `details` flag is specified.
     ///Can be `None`.
     pub image: Option<String>,
-    ///Whether VN's image is NSFW or not.
-    ///
-    ///Provided when `details` flag is specified.
-    pub image_nsfw: Option<bool>,
+    ///Flags of the `image`
+    pub image_flagging: Option<VnImageFlags>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     //Anime
     ///List of anime related to the VN.
     ///
     ///Provided when `anime` flag is specified.
-    pub anime: Option<Vec<VnAnime>>,
+    pub anime: Vec<VnAnime>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     //Relations
     ///List of related VNs.
     ///
     ///Provided when `relations` flag is specified.
-    pub relations: Option<Vec<VnRelation>>,
+    pub relations: Vec<VnRelation>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     //Tags
     ///List of VN's tags
     ///
     ///Provided when `tags` flag is specified.
-    pub tags: Option<Vec<VnTag>>,
+    pub tags: Vec<VnTag>,
 
+    #[serde(default)]
     //Stats
     ///Popularity from 0 to 100.
     ///
     ///Provided when `stats` flag is specified.
-    pub popularity: Option<u8>,
+    pub popularity: u8,
     ///VN's rating from 1 to 10.
     ///
     ///Provided when `stats` flag is specified.
@@ -202,17 +217,19 @@ pub struct Vn {
     ///Provided when `stats` flag is specified.
     pub votecount: Option<u64>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     //Screens
     ///List of screenshots
     ///
     ///Provided when `screens` flag is specified.
-    pub screens: Option<Vec<VnScreen>>,
+    pub screens: Vec<VnScreen>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     //Staff
     ///List of Staff members.
     ///
     ///Provided when `staff` flag is specified.
-    pub staff: Option<Vec<VnStaff>>,
+    pub staff: Vec<VnStaff>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -290,11 +307,12 @@ pub struct Release {
     ///
     ///Optionally provided when `basic` flag is specified.
     pub doujin: Option<bool>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Languages in which release is available.
     ///
     ///Provided when `basic` flag is specified.
     ///Can be empty array.
-    pub languages: Option<Vec<String>>,
+    pub languages: Vec<String>,
 
     //Details
     ///URL to website.
@@ -319,15 +337,17 @@ pub struct Release {
     ///
     ///Optionally provided when `details` flag is specified.
     pub catalog: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Platforms on which release is available.
     ///
     ///Optionally provided when `details` flag is specified.
     ///Can be empty array.
-    pub platforms: Option<Vec<String>>,
+    pub platforms: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Release's media.
     ///
     ///Optionally provided when `details` flag is specified.
-    pub media: Option<Vec<ReleaseMedia>>,
+    pub media: Vec<ReleaseMedia>,
     ///Resolution.
     ///
     ///Optionally provided when `details` flag is specified.
@@ -342,14 +362,16 @@ pub struct Release {
     ///
     ///Optionally provided when `details` flag is specified.
     pub animation: Option<[u8; 2]>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Related VNs.
     ///
     ///Optionally provided when `vn` flag is specified.
-    pub vn: Option<Vec<ReleaseVN>>,
+    pub vn: Vec<ReleaseVN>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///Related producers.
     ///
     ///Optionally provided when `producer` flag is specified.
-    pub producers: Option<Vec<ReleaseProducer>>,
+    pub producers: Vec<ReleaseProducer>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -357,8 +379,8 @@ pub struct Release {
 pub struct ProducerLinks {
     ///Official homepage.
     pub homepage: Option<String>,
-    ///Title of english wikipedia's article.
-    pub wikipedia: Option<String>
+    ///Wikidata identifier.
+    pub wikidata: Option<String>
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -413,11 +435,12 @@ pub struct Producer {
     ///Optionally provided when `details` flag is specified.
     pub description: Option<String>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     //Relations
     ///List of related producers.
     ///
     ///Provided when `relations` flag is specified.
-    pub relations: Option<Vec<ProducerRelation>>,
+    pub relations: Vec<ProducerRelation>,
 }
 
 #[derive(Debug)]
@@ -531,23 +554,24 @@ pub struct Character {
     ///Optionally provided when `meas` flag is specified.
     pub weight: Option<u16>,
 
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     //Traits
     ///List, possibly empty, of traits specified as tuple `(id, spoiler level)`.
     ///
     ///Provided when `traits` flag is specified.
-    pub traits: Option<Vec<(u64, u8)>>,
+    pub traits: Vec<(u64, u8)>,
 
-    //vns
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///List, possibly empty, of related VNs specified as tuple `(vn id, release id, spoiler level, role)`.
     ///
     ///Provided when `vns` flag is specified.
-    pub vns: Option<Vec<(u64, u64, u8, String)>>,
+    pub vns: Vec<(u64, u64, u8, String)>,
 
-    //voiced
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     ///List, possibly empty, of related VNs specified as tuple `(vn id, release id, spoiler level, role)`.
     ///
     ///Provided when `voiced` flag is specified.
-    pub voiced: Option<Vec<CharacterSeiyuu>>
+    pub voiced: Vec<CharacterSeiyuu>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -631,14 +655,49 @@ pub struct VnList {
     ///
     ///Provided when `basic` flag is specified.
     pub vn: Option<u64>,
-    ///Vote value in range from 10 to 100.
-    ///
-    ///Provided when `basic` flag is specified.
+    ///Status of VN.
     pub status: Option<VnStatus>,
+    #[serde(default)]
     ///Unix timestamp of when this vote is added.
     ///
     ///Provided when `basic` flag is specified.
-    pub added: Option<u64>,
+    pub added: u64,
+    ///User's notes.
+    ///
+    ///Optionally provided when `basic` flag is specified.
+    pub notes: Option<String>
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+///Vote list data representation. Returned by `get user`
+pub struct UList {
+    ///Unique identifier of User.
+    ///
+    ///Provided when `basic` flag is specified.
+    pub uid: Option<u64>,
+    ///Unique identifier of VN.
+    ///
+    ///Provided when `basic` flag is specified.
+    pub vn: Option<u64>,
+    #[serde(default)]
+    ///Unix timestamp of when this item has been added.
+    ///
+    ///Provided when `basic` flag is specified.
+    pub added: u64,
+    #[serde(rename = "lastmod", default)]
+    ///Unix timestamp of when this item has been last modified.
+    ///
+    ///Provided when `basic` flag is specified.
+    pub last_mod: u64,
+    #[serde(default)]
+    ///Unix timestamp when the vote has been cast.
+    ///
+    ///Provided when `basic` flag is specified.
+    pub voted: u64,
+    ///Vote value in range from 10 to 100.
+    ///
+    ///Provided when `basic` flag is specified.
+    pub vote: Option<u8>,
     ///User's notes.
     ///
     ///Optionally provided when `basic` flag is specified.

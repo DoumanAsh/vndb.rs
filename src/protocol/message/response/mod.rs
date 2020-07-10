@@ -38,10 +38,6 @@ impl fmt::Display for VndbError {
 #[derive(Clone, Deserialize, Serialize, Debug)]
 ///DBstats response
 pub struct DBstats {
-    ///Number of users.
-    pub users: u64,
-    ///Number of threads.
-    pub threads: u64,
     ///Number of tags.
     pub tags: u64,
     ///Number of releases.
@@ -50,8 +46,6 @@ pub struct DBstats {
     pub producers: u64,
     ///Number of characters.
     pub chars: u64,
-    ///Number of posts.
-    pub posts: u64,
     ///Number of VNs.
     pub vn: u64,
     ///Number of traits.
@@ -128,6 +122,12 @@ impl Results {
     #[inline]
     ///Attempts to convert data to [VnList information](results/Struct.VnList.html).
     pub fn vn_list(&self) -> serde_json::Result<typed::VnList> {
+        self.to()
+    }
+
+    #[inline]
+    ///Attempts to convert data to [UList information](results/Struct.UList.html).
+    pub fn u_list(&self) -> serde_json::Result<typed::UList> {
         self.to()
     }
 }

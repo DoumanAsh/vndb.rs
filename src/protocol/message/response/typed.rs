@@ -36,3 +36,5 @@ pub type User = Results<results::User>;
 pub type VoteList = Results<results::VoteList>;
 ///Result of `get vnlist` command.
 pub type VnList = Results<results::VnList>;
+///Result of `get ulist` command.
+pub type UList = Results<results::VnList>;

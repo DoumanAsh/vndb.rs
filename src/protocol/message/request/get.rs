@@ -116,23 +116,25 @@ pub struct Type {
 
 impl Type {
     ///VN information.
-    pub fn vn() -> Self { Self { inner: "vn" } }
+    pub const fn vn() -> Self { Self { inner: "vn" } }
     ///VN's release information.
-    pub fn release() -> Self { Self { inner: "release" } }
+    pub const fn release() -> Self { Self { inner: "release" } }
     ///VN's developer information.
-    pub fn producer() -> Self { Self { inner: "producer" } }
+    pub const fn producer() -> Self { Self { inner: "producer" } }
     ///VN's character information.
-    pub fn character() -> Self { Self { inner: "character" } }
+    pub const fn character() -> Self { Self { inner: "character" } }
     ///Developer's staff information.
-    pub fn staff() -> Self { Self { inner: "staff" } }
+    pub const fn staff() -> Self { Self { inner: "staff" } }
     ///User information.
-    pub fn user() -> Self { Self { inner: "user" } }
+    pub const fn user() -> Self { Self { inner: "user" } }
     ///User's votelist.
-    pub fn votelist() -> Self { Self { inner: "votelist" } }
+    pub const fn votelist() -> Self { Self { inner: "votelist" } }
     ///User's vnlist.
-    pub fn vnlist() -> Self { Self { inner: "vnlist" } }
+    pub const fn vnlist() -> Self { Self { inner: "vnlist" } }
     ///User's wishlist.
-    pub fn wishlist() -> Self { Self { inner: "wishlist" } }
+    pub const fn wishlist() -> Self { Self { inner: "wishlist" } }
+    ///Combination of `votelist`, `vnlist` and `wishlist`.
+    pub const fn ulist() -> Self { Self { inner: "ulist" } }
 
     ///Returns short ID alias of type.
     ///
