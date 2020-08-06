@@ -37,8 +37,8 @@ fn simple_client_should_send_message_over_tcp() {
 
     match client.receive().expect("To receive message").expect("To not fail receiving") {
         message::Response::Results(response) => {
-            let results = response.vn().expect("Parse into VN Results");
-            println!("Get Results={:?}", results);
+            println!("Get Results={:?}", response);
+            response.vn().expect("Parse into VN Results");
         }
         response => panic!("Unexpected response={:?}", response),
     }

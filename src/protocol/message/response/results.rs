@@ -107,7 +107,7 @@ pub struct VnStaff {
 ///Flags of the main VN image
 pub struct VnImageFlags {
     ///number of flagging votes.
-    #[serde(rename = "votecount", deserialize_with = "crate::utils::serde_from_str")]
+    #[serde(rename = "votecount")]
     pub vote_count: usize,
     ///Sexual score between 0 (safe) and 2 (explicit).
     pub sexual_avg: Option<f32>,

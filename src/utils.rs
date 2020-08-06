@@ -12,9 +12,9 @@ impl<T> AsPin for T {
     }
 }
 
-pub fn serde_from_str<'de, T: core::str::FromStr, D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<T, D::Error> where T::Err: core::fmt::Display {
-    use serde::Deserialize;
-
-    let s = <&str>::deserialize(deserializer)?;
-    T::from_str(&s).map_err(serde::de::Error::custom)
-}
+//pub fn serde_from_str<'de, T: core::str::FromStr, D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<T, D::Error> where T::Err: core::fmt::Display {
+//    use serde::Deserialize;
+//
+//    let s = <&str>::deserialize(deserializer)?;
+//    T::from_str(&s).map_err(serde::de::Error::custom)
+//}
