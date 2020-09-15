@@ -461,7 +461,7 @@ impl<'de> Deserialize<'de> for CharacterGender {
             "m" => Ok(CharacterGender::Male),
             "f" => Ok(CharacterGender::Female),
             "b" => Ok(CharacterGender::Both),
-            _ => Err(D::Error::custom(format!("Unknown type '{}' of character gender.", gender)))
+            _ => Err(D::Error::custom(format_args!("Unknown type '{}' of character gender.", gender)))
         }
     }
 }
@@ -633,7 +633,7 @@ impl<'de> Deserialize<'de> for VnStatus {
             2 => Ok(VnStatus::Finished),
             3 => Ok(VnStatus::Stalled),
             4 => Ok(VnStatus::Dropped),
-            _ => Err(D::Error::custom(format!("Unknown type '{}' of VN's status.", status)))
+            _ => Err(D::Error::custom(format_args!("Unknown type '{}' of VN's status.", status)))
         }
     }
 }
