@@ -1,6 +1,6 @@
 [package]
 name = "vndb"
-version = "0.9.1"
+version = "0.10.0"
 authors = ["Douman <douman@gmx.se>"]
 description = "Kawaii VNDB API"
 license = "MIT"
@@ -12,9 +12,6 @@ repository = "https://github.com/DoumanAsh/vndb.rs"
 documentation = "https://docs.rs/vndb"
 
 readme = "README.md"
-
-[badges]
-travis-ci = { repository = "DoumanAsh/vndb.rs" }
 
 [dependencies.serde]
 version = "1"
@@ -34,12 +31,12 @@ version = "0.21"
 optional = true
 
 [dependencies.tokio]
-version = "0.2"
+version = "0.3"
 optional = true
 features = ["net", "io-util"]
 
 [dependencies.tokio-rustls]
-version = "0.14"
+version = "0.20"
 optional = true
 
 [dependencies]
@@ -53,8 +50,8 @@ tokio-on = ["tokio", "tokio-rustls", "rustls-on"]
 rustls-on = ["rustls", "webpki", "webpki-roots"]
 
 [dev-dependencies.tokio]
-version = "0.2"
-features = ["rt-core", "macros"]
+version = "0.3"
+features = ["rt", "macros"]
 
 [package.metadata.docs.rs]
 features = ["rustls-on", "tokio-on"]
