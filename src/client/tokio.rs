@@ -27,7 +27,7 @@ impl Client<net::TcpStream> {
 
     ///Re-connects over plain TCP, aborting previous connection if any
     pub async fn reconnect(&mut self) -> io::Result<()> {
-        let _ = self.io.get_ref().shutdown(std::net::Shutdown::Both);
+        let _ = self.io.get_mut().shutdown();
 
         self.io = BufReader::new(Self::socket_connect().await?);
         self.read_buf.clear();
@@ -55,7 +55,7 @@ impl Client<tokio_rustls::client::TlsStream<net::TcpStream>> {
 
     ///Re-connects over TLS, aborting previous connection if any
     pub async fn reconnect_tls(&mut self) -> io::Result<()> {
-        let _ = self.io.get_mut().get_ref().0.shutdown(std::net::Shutdown::Both);
+        let _ = self.io.get_mut().get_mut().0.shutdown();
 
         self.io = BufReader::new(Self::socket_connect_tls().await?);
         self.read_buf.clear();
