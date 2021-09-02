@@ -35,7 +35,7 @@ version = "0.21"
 optional = true
 
 [dependencies.tokio]
-version = "1.0"
+version = "1.11"
 optional = true
 features = ["net", "io-util"]
 
