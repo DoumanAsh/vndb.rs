@@ -41,8 +41,8 @@ impl Client<tokio_rustls::client::TlsStream<net::TcpStream>> {
     async fn socket_connect_tls() -> io::Result<tokio_rustls::client::TlsStream<net::TcpStream>> {
         let socket = net::TcpStream::connect((API_HOST, super::API_SSL_PORT)).await?;
 
-        let dns_name = webpki::DNSNameRef::try_from_ascii_str(API_HOST).unwrap();
-        let config = tokio_rustls::TlsConnector::from(super::get_rustls_config().clone());
+        let (dns_name, config) = super::get_rustls_config();
+        let config = tokio_rustls::TlsConnector::from(config);
 
         Ok(config.connect(dns_name, socket).await?)
     }

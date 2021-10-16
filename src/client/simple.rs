@@ -33,12 +33,15 @@ impl Client<net::TcpStream> {
 }
 
 #[cfg(feature = "rustls-on")]
-impl Client<rustls::StreamOwned<rustls::ClientSession, net::TcpStream>> {
-    fn socket_connect_tls() -> io::Result<rustls::StreamOwned<rustls::ClientSession, net::TcpStream>> {
+impl Client<rustls::StreamOwned<rustls::ClientConnection, net::TcpStream>> {
+    fn socket_connect_tls() -> io::Result<rustls::StreamOwned<rustls::ClientConnection, net::TcpStream>> {
         let socket = std::net::TcpStream::connect((API_HOST, super::API_SSL_PORT))?;
 
-        let dns_name = webpki::DNSNameRef::try_from_ascii_str(API_HOST).unwrap();
-        let sess = rustls::ClientSession::new(super::get_rustls_config(), dns_name);
+        let (dns_name, config) = super::get_rustls_config();
+        let sess = match rustls::ClientConnection::new(config, dns_name) {
+            Ok(sess) => sess,
+            Err(error) => return Err(std::io::Error::new(std::io::ErrorKind::Other, error)),
+        };
 
         Ok(rustls::StreamOwned::new(sess, socket))
     }
