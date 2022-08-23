@@ -1,6 +1,6 @@
 [package]
 name = "vndb"
-version = "0.12.0"
+version = "0.12.1"
 authors = ["Douman <douman@gmx.se>"]
 description = "Kawaii VNDB API"
 license = "MIT"
@@ -31,7 +31,7 @@ version = "0.22"
 optional = true
 
 [dependencies.tokio]
-version = "1.12"
+version = "1.20.1"
 optional = true
 features = ["net", "io-util"]
 
