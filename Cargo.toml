@@ -1,6 +1,6 @@
 [package]
 name = "vndb"
-version = "0.13.0"
+version = "0.14.0"
 authors = ["Douman <douman@gmx.se>"]
 description = "Kawaii VNDB API"
 license = "MIT"

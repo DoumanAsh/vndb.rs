@@ -207,7 +207,7 @@ pub struct Vn {
     ///Popularity from 0 to 100.
     ///
     ///Provided when `stats` flag is specified.
-    pub popularity: u8,
+    pub popularity: f32,
     ///VN's rating from 1 to 10.
     ///
     ///Provided when `stats` flag is specified.
