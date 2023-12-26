@@ -27,27 +27,19 @@ fn parse_response(buf: &[u8]) -> io::Result<Option<crate::protocol::Response>> {
 }
 
 #[cfg(feature = "rustls-on")]
-fn get_rustls_config() -> (rustls::ServerName, std::sync::Arc<rustls::ClientConfig>) {
+fn get_rustls_config() -> (rustls::pki_types::ServerName<'static>, std::sync::Arc<rustls::ClientConfig>) {
     use core::mem::MaybeUninit;
     use core::convert::TryInto;
     use std::sync::Arc;
 
-    static mut SERVER_NAME: MaybeUninit<rustls::ServerName> = MaybeUninit::uninit();
+    static mut SERVER_NAME: MaybeUninit<rustls::pki_types::ServerName<'static>> = MaybeUninit::uninit();
     static mut CFG: MaybeUninit<Arc<rustls::ClientConfig>> = MaybeUninit::uninit();
     static CFG_ONCE: std::sync::Once = std::sync::Once::new();
 
     CFG_ONCE.call_once(|| {
         let mut certs = rustls::RootCertStore::empty();
-        let webpki_roots = webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|ta| {
-            rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
-                ta.subject,
-                ta.spki,
-                ta.name_constraints,
-            )
-        });
-        certs.add_server_trust_anchors(webpki_roots);
-        let config = rustls::ClientConfig::builder().with_safe_defaults()
-                                                    .with_root_certificates(certs)
+        certs.extend(webpki_roots::TLS_SERVER_ROOTS.into_iter().cloned());
+        let config = rustls::ClientConfig::builder().with_root_certificates(certs)
                                                     .with_no_client_auth();
         unsafe {
             CFG.as_mut_ptr().write(Arc::new(config));

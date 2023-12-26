@@ -39,9 +39,9 @@ impl<'a> convert::From<request::Get<'a>> for Request<'a> {
 impl<'a> fmt::Display for Request<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &Request::Login(ref login) => write!(f, "{}\x04", login),
-            &Request::Get(ref get) => write!(f, "{}\x04", get),
-            &Request::DBstats => write!(f, "dbstats\x04")
+            Request::Login(ref login) => write!(f, "{}\x04", login),
+            Request::Get(ref get) => write!(f, "{}\x04", get),
+            Request::DBstats => write!(f, "dbstats\x04")
         }
     }
 }
@@ -137,16 +137,17 @@ pub enum ResponseParseError {
 }
 
 impl fmt::Display for ResponseParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &ResponseParseError::EmptyResponse => write!(f, "VNDB sent empty response."),
-            &ResponseParseError::EmptyResults => write!(f, "VNDB sent Results with no payload."),
-            &ResponseParseError::EmptyDbStats => write!(f, "VNDB sent DBstats with no payload."),
-            &ResponseParseError::EmptyError => write!(f, "VNDB sent Error with no payload."),
-            &ResponseParseError::InvalidResults(ref error) => write!(f, "VNDB sent invalid JSON in Results: {}", error),
-            &ResponseParseError::InvalidDbStats(ref error) => write!(f, "VNDB sent invalid JSON in DBstats: {}", error),
-            &ResponseParseError::InvalidError(ref error) => write!(f, "VNDB sent invalid JSON in Error: {}", error),
-            &ResponseParseError::UnknownComamnd => write!(f, "VNDB sent unknown command"),
+            ResponseParseError::EmptyResponse => fmt.write_str("VNDB sent empty response."),
+            ResponseParseError::EmptyResults => fmt.write_str("VNDB sent Results with no payload."),
+            ResponseParseError::EmptyDbStats => fmt.write_str("VNDB sent DBstats with no payload."),
+            ResponseParseError::EmptyError => fmt.write_str("VNDB sent Error with no payload."),
+            ResponseParseError::InvalidResults(ref error) => write!(fmt, "VNDB sent invalid JSON in Results: {}", error),
+            ResponseParseError::InvalidDbStats(ref error) => write!(fmt, "VNDB sent invalid JSON in DBstats: {}", error),
+            ResponseParseError::InvalidError(ref error) => write!(fmt, "VNDB sent invalid JSON in Error: {}", error),
+            ResponseParseError::UnknownComamnd => fmt.write_str("VNDB sent unknown command"),
         }
     }
 }

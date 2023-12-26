@@ -1,6 +1,6 @@
 [package]
 name = "vndb"
-version = "0.14.0"
+version = "0.15.0"
 authors = ["Douman <douman@gmx.se>"]
 description = "Kawaii VNDB API"
 license = "MIT"
@@ -22,12 +22,12 @@ version = "1"
 features = ["derive"]
 
 [dependencies.rustls]
-version = "0.21"
+version = "0.22"
 default-features = false
 optional = true
 
 [dependencies.webpki-roots]
-version = "0.23"
+version = "0.26"
 optional = true
 
 [dependencies.tokio]
@@ -36,7 +36,7 @@ optional = true
 features = ["net", "io-util"]
 
 [dependencies.tokio-rustls]
-version = "0.24"
+version = "0.25"
 optional = true
 
 [dependencies]
