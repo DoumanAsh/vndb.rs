@@ -1,6 +1,6 @@
 [package]
 name = "vndb"
-version = "0.16.0"
+version = "0.16.1"
 authors = ["Douman <douman@gmx.se>"]
 description = "Kawaii VNDB API"
 license = "MIT"
@@ -27,7 +27,7 @@ default-features = false
 optional = true
 
 [dependencies.webpki-roots]
-version = "0.26"
+version = "1"
 default-features = false
 optional = true
 

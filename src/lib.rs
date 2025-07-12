@@ -10,7 +10,7 @@
 //!Due to bad default choice of underlying crypto library, `rustls` is included with `default-features = false` which essentially makes it unusable until user provides feature.
 
 #![warn(missing_docs)]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::style))]
+#![allow(clippy::style)]
 
 mod utils;
 pub mod protocol;
